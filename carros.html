@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Carreras</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: white;
+        }
+
+        /* Menú */
+        #menu {
+            margin-top: 50px;
+        }
+
+        /* Contenedor del juego */
+        #game-container {
+            width: 300px;
+            height: 500px;
+            background: gray;
+            position: relative;
+            margin: 20px auto;
+            overflow: hidden;
+            border: 2px solid white;
+        }
+
+        /* Coches */
+        .car {
+            width: 50px;
+            height: 80px;
+            position: absolute;
+            bottom: 10px;
+        }
+
+        #player-car {
+            background: red;
+            left: 125px;
+        }
+
+        .bot-car {
+            background: blue;
+            top: -100px;
+        }
+
+        /* Meta */
+        #finish-line {
+            width: 100%;
+            height: 10px;
+            background: white;
+            position: absolute;
+            top: -500px;
+        }
+
+        /* Controles táctiles */
+        #mobile-controls {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            margin: 5px;
+            border: none;
+            background: white;
+            color: black;
+            border-radius: 5px;
+        }
+
+        /* Volante táctil */
+        #wheel {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+        }
+
+        /* Mensaje de victoria */
+        #game-over {
+            font-size: 24px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menú Inicial -->
+    <div id="menu">
+        <h1>Juego de Carreras</h1>
+        <label for="carColor">Elige tu coche:</label>
+        <select id="carColor">
+            <option value="red">Rojo</option>
+            <option value="blue">Azul</option>
+            <option value="green">Verde</option>
+        </select>
+        <br><br>
+
+        <label for="controlType">Método de control:</label>
+        <select id="controlType">
+            <option value="wheel">Volante (Táctil)</option>
+            <option value="buttons">Flechas en pantalla</option>
+        </select>
+        <br><br>
+
+        <button onclick="startGame()">Comenzar</button>
+    </div>
+
+    <!-- Contenedor del juego -->
+    <div id="game-container" hidden>
+        <div id="player-car" class="car"></div>
+        <div class="bot-car car" style="left: 50px;"></div>
+        <div class="bot-car car" style="left: 150px;"></div>
+        <div id="finish-line"></div>
+    </div>
+
+    <!-- Controles táctiles -->
+    <div id="mobile-controls">
+        <button class="control-btn" id="left-btn">⬅️</button>
+        <button class="control-btn" id="right-btn">➡️</button>
+    </div>
+
+    <!-- Volante táctil -->
+    <div id="wheel"></div>
+
+    <p id="game-over" hidden>¡Ganaste la carrera!</p>
+
+    <script>
+        const playerCar = document.getElementById("player-car");
+        const botCars = document.querySelectorAll(".bot-car");
+        const finishLine = document.getElementById("finish-line");
+        const gameContainer = document.getElementById("game-container");
+        const menu = document.getElementById("menu");
+        const gameOverText = document.getElementById("game-over");
+        const mobileControls = document.getElementById("mobile-controls");
+        const wheel = document.getElementById("wheel");
+        let carPosition = 125;
+        let gameRunning = false;
+        let controlType = "wheel";
+
+        // Detectar si es Android
+        const isAndroid = /Android/i.test(navigator.userAgent);
+
+        // Iniciar el juego
+        function startGame() {
+            const selectedColor = document.getElementById("carColor").value;
+            controlType = document.getElementById("controlType").value;
+            playerCar.style.background = selectedColor;
+            menu.hidden = true;
+            gameContainer.hidden = false;
+            gameRunning = true;
+            moveBots();
+
+            // Mostrar controles según el tipo de control elegido
+            if (isAndroid) {
+                if (controlType === "buttons") {
+                    mobileControls.style.display = "block";
+                    wheel.style.display = "none";
+                } else if (controlType === "wheel") {
+                    wheel.style.display = "block";
+                    mobileControls.style.display = "none";
+                    setupWheelControl();
+                }
+            }
+        }
+
+        // Mover el coche del jugador (Android - Flechas)
+        document.getElementById("left-btn").addEventListener("click", () => {
+            if (carPosition > 0) carPosition -= 50;
+            playerCar.style.left = carPosition + "px";
+        });
+
+        document.getElementById("right-btn").addEventListener("click", () => {
+            if (carPosition < 250) carPosition += 50;
+            playerCar.style.left = carPosition + "px";
+        });
+
+        // Configurar volante táctil
+        function setupWheelControl() {
+            let startX = 0;
+            wheel.addEventListener("touchstart", (event) => {
+                startX = event.touches[0].clientX;
+            });
+
+            wheel.addEventListener("touchmove", (event) => {
+                let moveX = event.touches[0].clientX - startX;
+                if (moveX > 30 && carPosition < 250) {
+                    carPosition += 50;
+                    startX = event.touches[0].clientX;
+                } else if (moveX < -30 && carPosition > 0) {
+                    carPosition -= 50;
+                    startX = event.touches[0].clientX;
+                }
+                playerCar.style.left = carPosition + "px";
+            });
+        }
+
+        // Movimiento de los coches bots
+        function moveBots() {
+            let botPositions = [-100, -200];
+            let finishPosition = -500;
+            let interval = setInterval(() => {
+                if (!gameRunning) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                botPositions.forEach((pos, index) => {
+                    botPositions[index] += 5;
+                    botCars[index].style.top = botPositions[index] + "px";
+
+                    if (botPositions[index] >= 420) {
+                        gameRunning = false;
+                        gameOverText.innerText = "¡Perdiste! Un bot ganó la carrera.";
+                        gameOverText.hidden = false;
+                        clearInterval(interval);
+                    }
+                });
+
+                finishPosition += 5;
+                finishLine.style.top = finishPosition + "px";
+
+                if (finishPosition >= 420) {
+                    gameRunning = false;
+                    gameOverText.innerText = "¡Ganaste la carrera!";
+                    gameOverText.hidden = false;
+                    clearInterval(interval);
+                }
+            }, 50);
+        }
+    </script>
+
+</body>
+</html>
