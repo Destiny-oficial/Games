@@ -1,708 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Novela Visual - Destiny</title>
+  <title>Juego 3D en TrebEdit</title>
   <style>
-    body {
-      margin: 0;
-      font-family: 'Arial';
-      background-color: black;
-      color: white;
-      overflow: hidden;
-    }
-    #background {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-      z-index: 0;
-    }
-    #character {
-      position: absolute;
-      bottom: 0;
-      left: 10px;
-      height: 80%;
-      z-index: 1;
-    }
-    #dialogueBox {
-      position: absolute;
-      bottom: 100px;
-      width: 90%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.75);
-      padding: 25px;
-      z-index: 2;
-      border-radius: 15px;
-      font-size: 22px;
-      line-height: 1.6;
-      display: none;
-    }
-    #name {
-      font-weight: bold;
-      margin-bottom: 10px;
-      font-size: 24px;
-      color: #ffd700;
-    }
-    #buttons {
-      margin-top: 15px;
-      text-align: right;
-    }
-    button {
-      background: #444;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      margin-left: 10px;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    #money {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #111;
-      padding: 10px;
-      border-radius: 8px;
-      display: none;
-    }
-    #store {
-      position: absolute;
-      top: 60px;
-      right: 10px;
-      background: #222;
-      padding: 10px;
-      border-radius: 8px;
-      display: none;
-    }
-    #auth {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #111;
-      padding: 30px;
-      border-radius: 15px;
-      z-index: 3;
-    }
-    input {
-      display: block;
-      margin: 10px 0;
-      padding: 10px;
-      width: 100%;
-      border: none;
-      border-radius: 5px;
-    }
-    #redeem {
-  position: absolute;
-  top: 10px;
-  right: 170px;
-  display: flex;
-  gap: 5px;
-}
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
   </style>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
-  <div id="background" style="background-image: url('noche.png');"></div>
-  <img id="character" src="mujer.png" alt="Destiny">
-  
-  <div id="auth">
-    <h2>Iniciar sesión / Registrarse</h2>
-    <input type="email" id="email" placeholder="Correo electrónico">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button onclick="login()">Iniciar sesión</button>
-    <button onclick="register()">Registrarse</button>
-  </div>
-
-  <div id="dialogueBox">
-    <div id="name">Destiny</div>
-    <div id="dialogue"></div>
-    <div id="buttons">
-      <button onclick="nextDialogue()">Siguiente</button>
-      <button onclick="showOutfitSelector()">vestidor</button>
-      <button onclick="work()">Ir a trabajar</button>
-      <button onclick="toggleStore()">Tienda</button>
-      
-    </div>
-  </div>
-
-  <div id="money">Monedas: <span id="coins">0</span></div>
-  <div id="redeem">
-  <input type="text" id="redeemCode" placeholder="Código de canje" style="padding: 5px;">
-  <button onclick="redeemCode()" style="padding: 6px 10px;">Canjear</button>
-</div>
-
-  <div id="store">
-  <div><button onclick="buy('Laptop Gamer', 100)">Laptop Gamer (100)</button></div>
-  <div><button onclick="buy('Monitor Curvo', 150)">Monitor Curvo (150)</button></div>
-  <hr>
-  <div><strong>Trajes:</strong></div>
-  <div><button onclick="buyOutfit('traje1.png', 80)">traje de baño (blanco) (80)</button></div>
-  <div><button onclick="buyOutfit('traje2.png', 120)"> sudadera y gorra negra (120)</button></div>
-  <div><button onclick="buyOutfit('traje4.png', 1200)">traje de baño (negro) (1200)</button></div>
-  <div><button onclick="buyOutfit('traje3.png', 1000)">traje de baño (verde) (1000)</button></div>
-  <div><button onclick="buyOutfit('traje5.png', 2000)">traje de gatita (2000)</button></div>
-  <div><button onclick="buyOutfit('alina.png', 8000)">alina clover (8000 exclusivo)</button></div>
-</div>
-  <div id="minigame" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:black; z-index:4; color:white; text-align:center; padding-top:100px;">
-  <div id="minigameContent"></div>
-  <button onclick="exitMinigame()">Salir</button>
-  </div>
-  
-
-<div id="userInfo" style="position: absolute; top: 10px; left: 10px; background: #111; padding: 10px; border-radius: 8px; display: none;">
-  <span id="userEmail"></span>
-  <button onclick="logout()" style="margin-left: 10px;">Cerrar sesión</button>
-</div>
+  <!-- Three.js r149 -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+  <!-- OrbitControls.js (no minificada, compatible) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyA7azs1zx0HSKIweklLqtH78bKW5pzilKs",
-      authDomain: "destiny-game-5e8f9.firebaseapp.com",
-      projectId: "destiny-game-5e8f9",
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x222222);
 
-    let userId = "";
-    let dialogueIndex = 0;
-    let coins = 0;
-    let currentOutfit = "mujer.png"; // Traje por defecto
-let ownedOutfits = ["mujer.png"]; // Trajes desbloqueados
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 2, 5);
 
-    const dialogues = [
-  "La habitación de Destiny estaba sumida en la penumbra, iluminada solo por el resplandor azul de sus monitores.",
-  "—¡Uno menos! —exclamó, mientras su personaje realizaba un headshot.",
-  "[Player_One]: GG Destiny!\n[NoScopeMaster]: ¿Cómo carajos eres tan rápida?",
-  "Destiny sonrió. Para ella, los videojuegos no eran solo un pasatiempo, sino un estilo de vida.",
-  "—A ver… si la caja de colisión es más grande que el sprite…",
-  "—¡Argh! —exclamó, dejándose caer en su silla.",
-  "Sonó una notificación en su teléfono. Era un mensaje de su madre: \"Baja a cenar, hicimos tu comida favorita.\"",
-  "Cerró su computadora, se puso unas pantuflas y bajó a la cocina.",
-  "Su madre estaba sirviendo la comida mientras su padre leía algo en el celular.",
-  "—Pensé que te habías convertido en un fantasma allá arriba —bromeó su madre.",
-  "—Casi —respondió Destiny, sonriendo.",
-  "Comió con ellos, disfrutando del momento sin saber que sería la última cena en familia.",
-  "La noche fue larga. Destiny terminó su anime, revisó redes y volvió a programar.",
-  "Cuando decidió dormir, el sol ya comenzaba a salir.",
-  "Ring ring",
-  "Destiny, medio dormida, respondió: —¿Sí...?",
-  "—¿Es usted Destiny? Lamento informarle que sus padres han tenido un accidente.",
-  "—¿Cómo...? —balbuceó, con la voz quebrada.",
-  "Palabras frías del otro lado: hospital... emergencia... lo sentimos.",
-  "Se vistió apresuradamente y corrió al hospital.",
-  "Pero llegó demasiado tarde.",
-  "Una enfermera la miró con compasión: —Hicimos todo lo posible…",
-  "No lloró. No reaccionó. Solo escuchaba el eco de esas palabras.",
-  "El funeral fue una niebla: rostros desconocidos, abrazos vacíos, silencio.",
-  "Volvió sola a casa. El silencio pesaba más que el dolor.",
-  "Se dejó caer en su silla. Todo seguía igual… excepto ella.",
-  "Su estómago rugió, pero no tenía hambre.",
-  "La vida seguía, pero ella no.",
-  "Pasaron semanas. No tocó su código, ni redes, ni videojuegos.",
-  "Hasta que llegó la primera factura: luz, agua, internet, renta…",
-  "Era más de lo que tenía en el banco.",
-  "Intentó programar, pero su mente estaba en blanco.",
-  "Abrió un juego. No pasó del menú de inicio.",
-  "Buscó comida. La estufa no funcionaba: —No pagué el gas…",
-  "Probó el microondas. Se fue la luz: —Tampoco pagué la electricidad.",
-  "Miró su reflejo en el monitor apagado: ojeras, rostro pálido, alma apagada.",
-  "No podía seguir así.",
-  "Con ropa arrugada y su mochila, salió por primera vez en semanas.",
-  "El sol la cegó. Caminó por la ciudad buscando trabajo.",
-  "Pero en todas partes escuchó lo mismo:",
-  "—No estamos contratando. —Déjanos tu currículum.",
-  "Después de horas, se sentó agotada en una banca.",
-  "Treinta minutos sin que nada pasara.",
-  "Miró al cielo. —¿Qué demonios voy a hacer…?",
-  "Entonces un auto negro se detuvo frente a ella.",
-  "Un hombre elegante bajó la ventanilla: —Pareces estar en problemas.",
-  "—¿Eh…? —dijo Destiny, desconcertada.",
-  "—Te haré una oferta que no podrás rechazar.",
-  "Y así… su destino cambió para siempre.",
-  "CAPÍTULO 3 - La oferta",
-  "El hombre se presentó como Alexander Vaughn, dueño de NovaTech Studios.",
-  "—Necesito gente talentosa para mi empresa. ¿Te gustaría trabajar conmigo?",
-  "Destiny lo miró desconcertada, sin saber si confiar en él.",
-  "—¿Qué tipo de trabajo? —preguntó Destiny.",
-  "—Escritor y programador. Quiero que seas parte de mi equipo.",
-  "La oferta parecía tentadora, pero Destiny sabía que debía pensarlo.",
-  "—¿Y el salario? —preguntó Destiny.",
-  "—Te pagaré lo suficiente para que no tengas que preocuparte por nada.",
-  "Destiny sintió una extraña mezcla de emoción y desconfianza.",
-  "Una oferta como esa no se presentaba todos los días.",
-  "Pero, ¿realmente debía aceptar?",
-  "El hombre la miró fijamente, como si estuviera esperando una respuesta.",
-  "—¿Irás? —preguntó Alexander, esperando su decisión.",
-  "DECISIÓN 1: ¿Iré? o ¿Esperaré un poco...?", "CAPÍTULO 4 - Un nuevo comienzo",
-      "A la mañana siguiente, Destiny se puso su mejor ropa —que no era gran cosa— y tomó el autobús hacia la dirección en la tarjeta.",
-      "Cuando llegó, se encontró con un edificio moderno, con grandes ventanales y un logo brillante que decía NovaTech Studios.",
-      "Al entrar, sintió un escalofrío. Era otro mundo: empleados bien vestidos, escritorios con computadoras de última generación y pantallas gigantes mostrando avances de juegos en desarrollo.",
-      "Una recepcionista la recibió con amabilidad.",
-      "—Señorita Destiny, el señor Vaughn la espera.",
-      "La guiaron a una oficina en el último piso. Alexander Vaughn estaba sentado detrás de un escritorio elegante, revisando unos documentos. Cuando la vio, sonrió.",
-      "—Puntual. Me gusta eso.",
-      "Destiny se sentó frente a él, incómoda.",
-      "—¿De qué trata exactamente el trabajo?",
-      "—Nuestra empresa desarrolla videojuegos de alta tecnología —explicó Vaughn—. Busco alguien con creatividad y habilidades en programación. Quiero que escribas historias para nuestros juegos y también contribuyas en su desarrollo.",
-      "Los ojos de Destiny se iluminaron.",
-      "—¿Juegos? ¿Programación?",
-      "—Exactamente. Vi tu trabajo en foros y redes. Sé que tienes talento.",
-      "Destiny sintió un vuelco en el estómago. Alguien había notado su trabajo.",
-      "—¿Y cuánto pagará esto? —preguntó con cautela.",
-      "Vaughn deslizó un contrato sobre la mesa.",
-      "El número que vio la dejó sin aliento.",
-      "—¿Es una broma? —susurró.",
-      "—No. Es lo que vale tu talento.",
-      "Destiny sintió un nudo en la garganta.",
-      "—Acepto.",
-      "Vaughn sonrió.",
-      "—Bienvenida a NovaTech Studios.",
-      "Ese día, su vida cambió para siempre.",
-      "Firmó el contrato y se fue a su casa para presentarse el lunes para su primer día en NovaTech.",
-      "Se fue y descansó un poco.",
-      "Esta historia está protegida por copyright. Cualquiera que quiera usarlo para fines comerciales será sancionado con las autoridades de su país.",
-      "Todos los derechos son para Haruto Hakimito (Martinez Javier) y Destiny Oficial en conjunto con Anime Offis.",
-      "Bueno, seguimos con la historia…",
-      "CAPÍTULO 5 - Primer día en NovaTech",
-"El lunes siguiente, Destiny se despertó temprano, demasiado temprano para alguien acostumbrada a trasnochar.",
-"El nerviosismo le recorría las venas mientras se miraba al espejo.",
-"Su ropa era sencilla, un poco arrugada, pero no podía hacer mucho al respecto.",
-"Sabía que en un lugar como NovaTech, la apariencia lo era todo.",
-"Sin embargo, esa mañana lo único que le importaba era la oportunidad que tenía frente a ella.",
-"El edificio de NovaTech era aún más impresionante de cerca.",
-"El lobby de recepción era enorme, con una fuente de agua en el centro y pantallas mostrando avances de videojuegos.",
-"La recepcionista la saludó con una sonrisa.",
-"—Buenos días, Destiny. El señor Vaughn está esperándote en su oficina.",
-"Destiny respiró hondo y avanzó por el pasillo, rodeada de gente increíblemente profesional.",
-"Todo el mundo iba a prisa, pero todos parecían tener un propósito.",
-"Finalmente llegó a la oficina de Vaughn.",
-"El hombre estaba en su escritorio, mirando un par de pantallas, pero levantó la vista cuando ella entró.",
-"—Destiny, qué bien verte. ¿Lista para comenzar?",
-"—Sí, claro... —respondió ella, sintiendo mariposas en el estómago.",
-"Vaughn la hizo sentarse en la silla frente a él.",
-"—Este es tu nuevo espacio. —Dijo, señalando una mesa al fondo, rodeada de pantallas y dispositivos.",
-"—Aquí es donde podrás crear y programar todo lo que se te ocurra. No hay límites.",
-"—Tu creatividad es lo único que necesitamos.",
-"Destiny miró alrededor, completamente sorprendida.",
-"La mesa era moderna, con teclados mecánicos, tabletas gráficas y una pizarra digital.",
-"Un rincón perfecto para alguien como ella, que siempre soñó con programar y escribir a gran escala.",
-"—Gracias... esto es increíble —dijo, con una sonrisa tímida.",
-"Vaughn se levantó de su asiento.",
-"—Me alegra que te guste. Y aquí, trabajas a tu ritmo.",
-"—Tienes libertad para escribir y programar lo que desees.",
-"—Pero quiero que empieces con un proyecto específico.",
-"Destiny frunció el ceño.",
-"—¿De qué se trata?",
-"Vaughn la miró de manera seria, con un destello de intriga en sus ojos.",
-"—Queremos que trabajes en un videojuego de aventura con narrativa interactiva.",
-"—Combina tus habilidades de programación con tu talento para la escritura.",
-"—La historia debe ser envolvente y desafiante, y el código fluido y funcional.",
-"—Es un reto, pero sé que puedes hacerlo.",
-"Destiny tragó saliva. El desafío sonaba enorme.",
-"Pero algo dentro de ella la impulsaba a aceptarlo.",
-"—Lo haré. —Destiny se sintió segura de sí misma.",
-"El nerviosismo desapareció casi por completo.",
-"Vaughn sonrió.",
-"—Sé que lo harás. Bienvenida a la familia NovaTech.",
-"CAPÍTULO 6 - El reto del juego",
-"Los primeros días fueron abrumadores.",
-"Destiny pasó la mayor parte de su tiempo frente a las pantallas, escribiendo código y creando la historia que Vaughn quería.",
-"Pero había algo más en todo esto: los otros desarrolladores.",
-"La empresa estaba llena de talentos excepcionales, cada uno trabajando en proyectos asombrosos.",
-"Diseñadores, artistas, animadores… todos en su propia burbuja creativa.",
-"Destiny no sabía cómo encajar en todo eso.",
-"En su primer día, un programador experimentado llamado Luke se le acercó.",
-"—¿Necesitas ayuda con eso? —preguntó Luke, con una sonrisa amigable.",
-"Destiny miró el código, algo avergonzada.",
-"—Sí, no puedo hacer que la animación se sincronice con la jugabilidad.",
-"Luke observó un par de líneas y presionó unas teclas.",
-"En segundos, el problema se resolvió.",
-"—Aquí. La animación se retrasa si usas esta función. Es un truco de mi primer año.",
-"Destiny lo miró, sorprendida.",
-"—¡Vaya! Eso fue impresionante, gracias.",
-"—Es un placer —respondió Luke—. Es raro ver a alguien como tú en este campo.",
-"—La mayoría solo programa o escribe, pero tú haces ambas cosas.",
-"—Creo que te va a ir muy bien aquí.",
-"Destiny asintió, con mezcla de orgullo y presión.",
-"Cada día se sentía más en casa, pero sabía que no podía fallar.",
-"Pasaron las semanas y Destiny desarrolló la historia de 'A Flirting Star'.",
-"Era un juego de aventura en un futuro distópico.",
-"La heroína luchaba contra un sistema opresivo.",
-"Una narrativa que reflejaba lo que ella sentía por dentro.",
-"El deseo de superar obstáculos y encontrar su camino.",
-"Pero algo comenzó a inquietarla.",
-"La visión de Vaughn para el juego iba más allá del entretenimiento.",
-"La historia debía influir en cómo los jugadores veían la vida.",
-"El impacto de su trabajo podía ser mucho más profundo de lo que imaginaba.",
-"Una tarde, mientras escribía el guion, Vaughn se acercó a su mesa.",
-"—Estás haciendo un gran trabajo, Destiny. ¿Cómo va la historia?",
-"Destiny levantó la vista.",
-"—Creo que estoy cerca de algo grande.",
-"—Es una historia difícil, pero quiero que los jugadores la sientan de verdad.",
-"Vaughn sonrió.",
-"—Lo sabía. La narrativa es tan importante como el código.",
-"—Estás dando en el clavo.",
-"Esa sonrisa, aunque alentadora, le generó una sensación extraña.",
-"¿Realmente sabía Vaughn lo que implicaba esa 'gran historia'?",
-"CAPÍTULO 7 - El peso de la creación",
-"La presión dentro de NovaTech comenzaba a ser palpable.",
-"Destiny había asumido el reto con energía, pero la historia se sentía cada vez más compleja.",
-"'A Flirting Star' no era solo un juego; era una experiencia emocional.",
-"La protagonista, Lila, era una astrobióloga que viajaba por planetas en busca de una anomalía cósmica.",
-"Cada encuentro, cada planeta, tenía su propia historia.",
-"Pero lo más importante era la conexión de Lila con las estrellas.",
-"Un simbolismo de cómo buscar luz en medio de la oscuridad.",
-"Pero algo no encajaba. Destiny lo sentía en cada línea que escribía.",
-"La historia necesitaba un giro. Algo inesperado.",
-"Por las noches, Destiny miraba el código sin poder avanzar.",
-"La narrativa no se sincronizaba con las mecánicas del juego.",
-"Y eso la atormentaba.",
-"Una noche, mientras aún trabajaba, Luke se le acercó.",
-"—¿Todo bien? —preguntó al ver su gesto cansado.",
-"—No puedo hacer que funcione —respondió Destiny—. La historia y la jugabilidad no se conectan bien.",
-"—Quiero que los jugadores sientan que están dentro de la historia.",
-"Luke asintió, con comprensión.",
-"—No olvides: los personajes son lo más importante.",
-"—Si Lila no conecta con el jugador, nada más importa.",
-"—¿Y cómo hago que conecte con ellos? —preguntó Destiny.",
-"—Hazla real. Imperfecta. Que el jugador sienta con ella.",
-"—Las estrellas también se apagan —añadió Luke.",
-"Esa frase se quedó con ella.",
-"Esa noche, Destiny escribió una escena donde Lila confiesa su miedo a la soledad.",
-"Una escena simple, pero llena de emoción.",
-"Y por primera vez, la narrativa comenzó a fluir de nuevo.",
-"El código encajaba. Todo tenía sentido.",
-"Al día siguiente, Vaughn apareció con una taza de café.",
-"—¿Cómo va 'A Flirting Star'? —preguntó curioso.",
-"Destiny le mostró su avance.",
-"La escena de Lila observando las estrellas ya estaba implementada.",
-"Los jugadores podían interactuar con las estrellas y escuchar sus pensamientos.",
-"Vaughn observó la pantalla, en silencio.",
-"—Esto es justo lo que necesitábamos —dijo finalmente.",
-"—Pero te advierto, Destiny... esto no es solo un juego.",
-"—Podría cambiar cómo la gente ve los videojuegos.",
-"Destiny no respondió de inmediato.",
-"La presión era real. Este no era solo un proyecto más.",
-"Era una obra que podía tocar corazones.",
-"Y sabía que un gran poder, también traía grandes responsabilidades.",
-"CAPÍTULO 9 - Un descanso merecido",
-"Los días dentro de NovaTech comenzaban a diluirse entre trabajo y estrés.",
-"'A Flirting Star' se volvía una mezcla de emoción y agotamiento.",
-"Destiny llevaba semanas entre código y narrativa, sin parar.",
-"Su salud física y mental empezaba a resentirse.",
-"Aunque orgullosa de su progreso, el cansancio la vencía.",
-"Una mañana, decidió que no podía más.",
-"Se acercó a la oficina de Vaughn, decidida a hablar.",
-"Vaughn tecleaba rápido, rodeado de pantallas.",
-"Destiny lo observó unos segundos, luego habló.",
-"—Vaughn, necesito un día —dijo suavemente.",
-"Vaughn alzó la mirada, serio, pero comprensivo.",
-"—Entiendo. Has trabajado demasiado. Te mereces un descanso.",
-"—Además —añadió con una sonrisa— aquí tienes tu primer pago.",
-"Destiny se sorprendió al ver el sobre que le extendía.",
-"Había olvidado que este trabajo también se pagaba.",
-"Abrió el sobre y vio una cifra que la dejó sin palabras.",
-"Era más de lo que imaginó.",
-"—Gracias, Vaughn —susurró, conteniendo la emoción.",
-"—Te lo has ganado —respondió él—. Disfruta tu día.",
-"Destiny salió de la oficina con una sonrisa tímida.",
-"El aire fresco del exterior la recibió al cruzar las puertas.",
-"Por primera vez en mucho tiempo, su mente se sentía ligera.",
-];
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-    function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  auth.signInWithEmailAndPassword(email, password)
-    .then(user => {
-      userId = user.user.uid;
-      document.getElementById("auth").style.display = "none";
-      document.getElementById("dialogueBox").style.display = "block";
-      document.getElementById("money").style.display = "block";
-      document.getElementById("userInfo").style.display = "block";
-      document.getElementById("userEmail").innerText = email;
-      loadProgress();
-    }).catch(err => alert(err.message));
-}
+    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+    scene.add(light);
 
-function register() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(user => {
-      userId = user.user.uid;
-      db.collection("users").doc(userId).set({ dialogueIndex: 0, coins: 0 });
-      document.getElementById("auth").style.display = "none";
-      document.getElementById("dialogueBox").style.display = "block";
-      document.getElementById("money").style.display = "block";
-      document.getElementById("userInfo").style.display = "block";
-      document.getElementById("userEmail").innerText = email;
-      updateDialogue();
-    }).catch(err => alert(err.message));
-}
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    dirLight.position.set(3, 10, 5);
+    scene.add(dirLight);
 
-    function updateDialogue() {
-     
-     if (dialogueIndex === 232) { // reemplaza con el número real
-  coins += 200;
-  document.getElementById("coins").innerText = coins;
-  alert("Has recibido 200 monedas por tu trabajo en NovaTech!");
-  saveProgress();
-}
-     
-console.log("Índice actual:", dialogueIndex);
-      document.getElementById("dialogue").innerText = dialogues[dialogueIndex];
-      if (dialogueIndex === 30) {
-        document.getElementById("background").style.backgroundImage = "url('office.png')";
-      }
-      if (dialogueIndex === 32) {
-        document.getElementById("buttons").innerHTML = `
-          <button onclick="nextDialogue()">Iré</button>
-          <button onclick="wait()">Esperaré un poco...</button>
-        `;
-      } else {
-        document.getElementById("buttons").innerHTML = `
-  <button onclick="nextDialogue()">Siguiente</button>
-  <button onclick="showOutfitSelector()">Vestidor</button>
-  <button onclick="work()">Ir a trabajar</button>
-  <button onclick="toggleStore()">Tienda</button>
-`;
-      }
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      new THREE.MeshStandardMaterial({ color: 0x444444 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    const player = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 2, 1),
+      new THREE.MeshStandardMaterial({ color: 0x00ffcc })
+    );
+    player.position.y = 1;
+    scene.add(player);
+
+    // Asegúrate que esta línea funciona con la versión JS directa
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1, 0);
+    controls.update();
+
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+    function updatePlayerMovement() {
+      const speed = 0.1;
+      if (keys['w']) player.position.z -= speed;
+      if (keys['s']) player.position.z += speed;
+      if (keys['a']) player.position.x -= speed;
+      if (keys['d']) player.position.x += speed;
     }
 
-    function nextDialogue() {
-      if (dialogueIndex < dialogues.length - 1) {
-        dialogueIndex++;
-        updateDialogue();
-        saveProgress();
-      }
+    function animate() {
+      requestAnimationFrame(animate);
+      updatePlayerMovement();
+      renderer.render(scene, camera);
     }
+    animate();
 
-    function wait() {
-      dialogueIndex = 32;
-      updateDialogue();
-      saveProgress();
-    }
-
-    function work() {
-  document.getElementById("minigame").style.display = "block";
-  startMinigame();
-}
-
-    function toggleStore() {
-      const store = document.getElementById("store");
-      store.style.display = store.style.display === "none" ? "block" : "none";
-    }
-
-    function buy(item, cost) {
-      if (coins >= cost) {
-        coins -= cost;
-        alert("Compraste: " + item);
-        saveProgress();
-        document.getElementById("coins").innerText = coins;
-      } else {
-        alert("No tienes suficientes monedas");
-      }
-    }
-
-function buyOutfit(outfitFile, cost) {
-  if (coins >= cost) {
-    coins -= cost;
-    if (!ownedOutfits.includes(outfitFile)) {
-      ownedOutfits.push(outfitFile);
-      alert("¡Traje desbloqueado!");
-    } else {
-      alert("Ya tienes este traje.");
-    }
-    document.getElementById("coins").innerText = coins;    
-    saveProgress();
-  } else {
-    alert("No tienes suficientes monedas");
-  }
-}                
-
-    function saveProgress() {
-  if (!userId) return;
-  db.collection("users").doc(userId).set({
-    dialogueIndex,
-    coins,
-    outfit: currentOutfit,
-    outfits: ownedOutfits
-  });
-}
-
-function redeemCode() {
-  const code = prompt("Ingresa tu código:");
-  if (!code) return;
-
-  const codeRef = db.collection("codes").doc(code);
-
-  codeRef.get().then(doc => {
-    if (!doc.exists) {
-      alert("El código no es válido.");
-      return;
-    }
-
-    const data = doc.data();
-
-    if (data.usedBy && data.usedBy.includes(userId)) {
-      alert("Este código ya fue usado por ti.");
-      return;
-    }
-
-    // Premiar según el tipo
-    if (data.type === "coins") {
-      coins += data.value;
-      document.getElementById("coins").innerText = coins;
-      saveProgress();
-      alert(`¡Has recibido ${data.item} monedas!`);
-    } else if (data.type === "traje") {
-      if (!ownedOutfits.includes(data.item)) {
-        ownedOutfits.push(data.item);
-        alert(`¡Has desbloqueado el traje: ${data.item}!`);
-      } else {
-        alert("Ya tienes este traje.");
-        return;
-      }
-    }
-
-    // Marcar como usado por este usuario
-    codeRef.update({
-      usedBy: firebase.firestore.FieldValue.arrayUnion(userId)
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
-  }).catch(err => {
-    console.error(err);
-    alert("Hubo un error al canjear el código.");
-  });
-}
-
-
-    function loadProgress() {
-  db.collection("users").doc(userId).get().then(doc => {
-    if (doc.exists) {
-      dialogueIndex = doc.data().dialogueIndex || 0;
-      coins = doc.data().coins || 0;
-      currentOutfit = doc.data().outfit || "mujer.png";
-      ownedOutfits = doc.data().outfits || ["mujer.png"];
-      document.getElementById("coins").innerText = coins;
-      document.getElementById("character").src = currentOutfit;
-      updateDialogue();
-    } else {
-      updateDialogue();
-    }
-  });
-}
-    function logout() {
-  auth.signOut().then(() => {
-    location.reload();
-  });
-}
-let currentMinigame = 0;
-
-function startMinigame() {
-  const content = document.getElementById("minigameContent");
-  currentMinigame = Math.random() < 0.5 ? 1 : 2;
-
-  if (currentMinigame === 1) {
-    content.innerHTML = `
-      <h2>Escribe la palabra: "NovaTech"</h2>
-      <input type="text" id="wordInput" placeholder="Escribe aquí..." />
-      <button onclick="checkWord()">Enviar</button>
-    `;
-  } else {
-    content.innerHTML = `
-      <h2>Junta los cables</h2>
-      <p>Haz clic en A y luego en 1 (pares correctos)</p>
-      <div style="display:flex; justify-content:center; gap:40px; font-size:24px;">
-        <div>
-          <div onclick="selectCable('A')">A</div>
-          <div onclick="selectCable('B')">B</div>
-          <div onclick="selectCable('C')">C</div>
-        </div>
-        <div>
-          <div onclick="selectCable('1')">1</div>
-          <div onclick="selectCable('2')">2</div>
-          <div onclick="selectCable('3')">3</div>
-        </div>
-      </div>
-    `;
-  }
-}
-
-function checkWord() {
-  const input = document.getElementById("wordInput").value.trim();
-  if (input.toLowerCase() === "novatech") {
-    coins += 20;
-    alert("¡Correcto! Ganaste 20 monedas.");
-    document.getElementById("coins").innerText = coins;
-    saveProgress();
-    exitMinigame();
-  } else {
-    alert("Incorrecto. Intenta de nuevo.");
-  }
-}
-
-let firstCable = null;
-function selectCable(id) {
-  if (!firstCable) {
-    firstCable = id;
-  } else {
-    const pair = firstCable + id;
-    if (["A1", "B2", "C3"].includes(pair)) {
-      coins += 10;
-      alert("¡Cable correcto! Ganaste 10 monedas.");
-      document.getElementById("coins").innerText = coins;
-      saveProgress();
-      exitMinigame();
-    } else {
-      alert("Cable incorrecto. Intenta de nuevo.");
-    }
-    firstCable = null;
-  }
-}
-
-function exitMinigame() {
-  document.getElementById("minigame").style.display = "none";
-  document.getElementById("minigameContent").innerHTML = "";
-}
-function showOutfitSelector() {
-  const container = document.getElementById("outfitOptions");
-  console.log("Mostrando vestidor con:", ownedOutfits);
-  container.innerHTML = ""; // Limpia opciones anteriores
-  ownedOutfits.forEach(outfit => {
-    const img = document.createElement("img");
-    img.src = outfit;
-    img.style.width = "100px";
-    img.style.height = "140px";
-    img.style.margin = "10px";
-    img.style.cursor = "pointer";
-    img.style.border = outfit === currentOutfit ? "3px solid gold" : "1px solid white";
-    img.onclick = () => {
-      currentOutfit = outfit;
-      document.getElementById("character").src = outfit;
-      saveProgress();
-      showOutfitSelector(); // Refresca para mostrar cuál está equipado
-    };
-    container.appendChild(img);
-  });
-  document.getElementById("outfitSelector").style.display = "block";
-}
-
   </script>
-<div id="outfitSelector" style="display:none; position:absolute; top:20%; left:50%; transform:translateX(-50%); background:#111; color:white; padding:20px; border-radius:10px; z-index:5;">
-  <h3>Selecciona tu traje</h3>
-  <div id="outfitOptions" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
-  <br>
-  <button onclick="document.getElementById('outfitSelector').style.display='none'">Cerrar</button>
-</div>
-
 </body>
 </html>
