@@ -558,11 +558,11 @@ function redeemCode() {
     }
 
     // Premiar según el tipo
-    if (data.type === "coins") {
-      coins += data.value;
+    if (data.type === "monedas" || data.type === "coins") {
+      coins += data.amount;
       document.getElementById("coins").innerText = coins;
       saveProgress();
-      alert(`¡Has recibido ${data.item} monedas!`);
+      alert(`¡Has recibido ${data.amount} monedas!`);
     } else if (data.type === "traje") {
       if (!ownedOutfits.includes(data.item)) {
         ownedOutfits.push(data.item);
