@@ -1,22 +1,23 @@
+<!-- juego.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Memoria Multijugador UwU</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Juego de Memoria Multijugador UwU</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <style>
     body { font-family: sans-serif; background: #e0f7fa; text-align: center; }
     .grid { display: grid; grid-template-columns: repeat(4, 60px); gap: 10px; justify-content: center; margin-top: 20px; }
     .card {
-      background: white; font-size: 30px; width: 60px; height: 60px;
+      width: 60px; height: 60px; font-size: 30px; background: #fff;
       display: flex; align-items: center; justify-content: center;
-      border-radius: 10px; box-shadow: 0 0 5px #aaa; cursor: pointer;
-      transition: background 0.3s, transform 0.3s;
+      border: 2px solid #ccc; border-radius: 8px;
+      cursor: pointer; transition: all 0.2s ease;
     }
-    .win { background-color: #c8e6c9; }
-    .player-list button { margin: 5px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+    .win { background: #b2ff59 !important; cursor: default; }
+    button { margin: 5px; padding: 6px 12px; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -27,7 +28,8 @@
 
   <div id="juego" style="display:none;">
     <h3>Jugando contra: <span id="enemigoSpan"></span></h3>
-    <p id="status">Busca los pares correctos 👀</p>
+    <h4>Turno de: <span id="turnoSpan"></span></h4>
+    <button onclick="reiniciarJuego()">🔄 Reiniciar juego</button>
     <div class="grid" id="tablero"></div>
     <div id="puntajes"></div>
     <div id="ganador"></div>
@@ -39,45 +41,50 @@
       authDomain: "fps-game-dee3c.firebaseapp.com",
       databaseURL: "https://fps-game-dee3c-default-rtdb.firebaseio.com",
       projectId: "fps-game-dee3c",
-      storageBucket: "fps-game-dee3c.firebasestorage.app",
+      storageBucket: "fps-game-dee3c.appspot.com",
       messagingSenderId: "301239918953",
-      appId: "1:301239918953:web:575b40636e89bda4f91df8",
-      measurementId: "G-70R9MPQ162"
+      appId: "1:301239918953:web:575b40636e89bda4f91df8"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const emojis = ["🐱", "🐱", "🌸", "🌸", "🍓", "🍓", "🌈", "🌈"];
+    const emojis = ["🐱","🐱","🌸","🌸","🍓","🍓","🌈","🌈"];
     let nombreJugador = "", enemigo = "", aciertos = 0, cartasVolteadas = [], yaGanó = false;
+    let turnoActual = null;
+
+    window.onload = () => {
+      const guardado = localStorage.getItem("nombreJugador");
+      if (guardado) {
+        document.getElementById("nombre").value = guardado;
+        registrarJugador();
+      }
+    };
 
     function registrarJugador() {
       nombreJugador = document.getElementById("nombre").value.trim();
       if (!nombreJugador) return alert("Pon tu nombre UwU");
+      localStorage.setItem("nombreJugador", nombreJugador);
       db.ref("jugadores/" + nombreJugador).set({ online: true });
       escucharSiMeRetoAlguien();
       mostrarJugadores();
     }
 
     function mostrarJugadores() {
-      db.ref("jugadores").on("value", snap => {
+      db.ref("jugadores").once("value", snap => {
         const data = snap.val() || {};
         const lista = Object.keys(data).filter(j => j !== nombreJugador);
         const contenedor = document.getElementById("jugadoresDisponibles");
         contenedor.innerHTML = "<h3>Elige a tu contrincante:</h3>";
-        if (lista.length === 0) {
-          contenedor.innerHTML += "<p>No hay jugadores conectados 😿</p>";
-        } else {
-          lista.forEach(j => {
-            const btn = document.createElement("button");
-            btn.textContent = j;
-            btn.onclick = () => {
-              enemigo = j;
-              iniciarJuego(true); // soy quien reta
-              db.ref("retos/" + enemigo).set(nombreJugador);
-            };
-            contenedor.appendChild(btn);
-          });
-        }
+        lista.forEach(j => {
+          const btn = document.createElement("button");
+          btn.textContent = j;
+          btn.onclick = () => {
+            enemigo = j;
+            iniciarJuego(true);
+            db.ref("retos/" + enemigo).set(nombreJugador);
+          };
+          contenedor.appendChild(btn);
+        });
       });
     }
 
@@ -86,44 +93,60 @@
         const retador = snap.val();
         if (retador && !enemigo) {
           enemigo = retador;
-          iniciarJuego(false); // fui retado
+          iniciarJuego(false);
         }
       });
     }
 
     function iniciarJuego(esQuienReta) {
+      aciertos = 0;
+      cartasVolteadas = [];
+      yaGanó = false;
+      turnoActual = nombreJugador;
+
       db.ref("memoria/" + nombreJugador).set({ aciertos: 0, contra: enemigo });
       if (esQuienReta) {
         db.ref("memoria/" + enemigo).set({ aciertos: 0, contra: nombreJugador });
       }
+
+      db.ref("partidas/" + partidaID()).set({
+        jugadores: [nombreJugador, enemigo],
+        turno: turnoActual
+      });
+
       document.getElementById("enemigoSpan").innerText = enemigo;
       document.getElementById("juego").style.display = "block";
       document.getElementById("jugadoresDisponibles").style.display = "none";
-      aciertos = 0;
-      cartasVolteadas = [];
-      yaGanó = false;
       iniciarTablero();
       mostrarPuntajes();
       escucharGanador();
+      escucharTurno();
+    }
+
+    function partidaID() {
+      return [nombreJugador, enemigo].sort().join("_");
     }
 
     function iniciarTablero() {
       const mezclado = [...emojis].sort(() => 0.5 - Math.random());
       const tablero = document.getElementById("tablero");
       tablero.innerHTML = "";
-      mezclado.forEach((emoji, i) => {
+
+      mezclado.forEach((emoji, index) => {
         const div = document.createElement("div");
         div.className = "card";
         div.dataset.valor = emoji;
-        div.dataset.index = i;
-        div.innerText = ""; // iniciar oculto
-        div.addEventListener("click", () => voltear(div));
+        div.innerText = "?";
+        div.onclick = () => {
+          if (turnoActual !== nombreJugador || yaGanó) return;
+          voltear(div);
+        };
         tablero.appendChild(div);
       });
     }
 
     function voltear(carta) {
-      if (yaGanó || cartasVolteadas.includes(carta) || carta.innerText || cartasVolteadas.length >= 2) return;
+      if (carta.classList.contains("win") || carta.innerText !== "?" || cartasVolteadas.length === 2) return;
       carta.innerText = carta.dataset.valor;
       cartasVolteadas.push(carta);
 
@@ -138,27 +161,40 @@
             if (aciertos === 4) {
               yaGanó = true;
               db.ref("memoria_ganador").set({ ganador: nombreJugador, contrincante: enemigo });
+              window.location.href = "ganador.html"; // Redirección
             }
           } else {
-            a.innerText = "";
-            b.innerText = "";
+            a.innerText = "?";
+            b.innerText = "?";
+            cambiarTurno();
           }
           cartasVolteadas = [];
-        }, 800);
+        }, 600);
       }
+    }
+
+    function cambiarTurno() {
+      turnoActual = turnoActual === nombreJugador ? enemigo : nombreJugador;
+      db.ref("partidas/" + partidaID() + "/turno").set(turnoActual);
+    }
+
+    function escucharTurno() {
+      db.ref("partidas/" + partidaID() + "/turno").on("value", snap => {
+        turnoActual = snap.val();
+        document.getElementById("turnoSpan").innerText = turnoActual;
+      });
     }
 
     function mostrarPuntajes() {
       db.ref("memoria").on("value", snap => {
         const data = snap.val() || {};
-        let txt = "<h3>🏅 Puntajes</h3>";
-        for (let jugador in data) {
-          const info = data[jugador];
-          if (info.contra === enemigo || jugador === nombreJugador) {
-            txt += `${jugador}: ${info.aciertos || 0} pares<br>`;
+        let html = "<h3>🏅 Puntajes</h3>";
+        for (let j in data) {
+          if (j === nombreJugador || j === enemigo) {
+            html += `${j}: ${data[j].aciertos || 0} pares<br>`;
           }
         }
-        document.getElementById("puntajes").innerHTML = txt;
+        document.getElementById("puntajes").innerHTML = html;
       });
     }
 
@@ -167,13 +203,21 @@
         const data = snap.val();
         if (data && !yaGanó) {
           yaGanó = true;
-          if (data.ganador === nombreJugador) {
-            document.getElementById("ganador").innerHTML = `🎉 ¡Ganaste tú, ${data.ganador}!<br>Tu rival fue: ${data.contrincante}`;
-          } else if (data.contrincante === nombreJugador) {
-            document.getElementById("ganador").innerHTML = `💔 Ganó ${data.ganador}. Tu rival eras tú 😿`;
-          }
+          window.location.href = "ganador.html";
         }
       });
+    }
+
+    function reiniciarJuego() {
+      yaGanó = false;
+      enemigo = "";
+      document.getElementById("juego").style.display = "none";
+      document.getElementById("jugadoresDisponibles").style.display = "block";
+      db.ref("retos/" + nombreJugador).remove();
+      db.ref("memoria/" + nombreJugador).remove();
+      db.ref("partidas/" + partidaID()).remove();
+      db.ref("memoria_ganador").remove();
+      mostrarJugadores();
     }
   </script>
 </body>
