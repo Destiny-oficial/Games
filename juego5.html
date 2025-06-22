@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Memoria Multijugador UwU</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #e0f7fa; text-align: center; }
+    .grid { display: grid; grid-template-columns: repeat(4, 60px); gap: 10px; justify-content: center; margin-top: 20px; }
+    .card {
+      background: white; font-size: 30px; width: 60px; height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; box-shadow: 0 0 5px #aaa; cursor: pointer;
+    }
+    .win { background-color: #c8e6c9; }
+    .player-list { margin: 10px auto; max-width: 300px; }
+    .player-list button { margin: 5px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>🧠 Juego de Memoria Multijugador UwU</h2>
+  <input id="nombre" placeholder="Tu nombre" />
+  <button onclick="registrarJugador()">Ver jugadores disponibles</button>
+  <div id="jugadoresDisponibles" class="player-list"></div>
+
+  <div id="juego" style="display:none;">
+    <h3>Jugando contra: <span id="enemigoSpan"></span></h3>
+    <p id="status"></p>
+    <div class="grid" id="tablero"></div>
+    <div id="puntajes"></div>
+    <div id="ganador"></div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD8_eJrmjXIm8-IQXtusuu65iknO9Y-ypM",
+      authDomain: "fps-game-dee3c.firebaseapp.com",
+      databaseURL: "https://fps-game-dee3c-default-rtdb.firebaseio.com",
+      projectId: "fps-game-dee3c",
+      storageBucket: "fps-game-dee3c.firebasestorage.app",
+      messagingSenderId: "301239918953",
+      appId: "1:301239918953:web:575b40636e89bda4f91df8",
+      measurementId: "G-70R9MPQ162"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const emojis = ["🐱", "🐱", "🌸", "🌸", "🍓", "🍓", "🌈", "🌈"];
+    let nombreJugador = "", enemigo = "", aciertos = 0, cartasVolteadas = [], yaGanó = false;
+
+    function registrarJugador() {
+      nombreJugador = document.getElementById("nombre").value.trim();
+      if (!nombreJugador) return alert("Escribe tu nombre primero UwU");
+      db.ref("jugadores/" + nombreJugador).set({ online: true });
+      mostrarJugadores();
+    }
+
+    function mostrarJugadores() {
+      db.ref("jugadores").on("value", snap => {
+        const data = snap.val() || {};
+        const lista = Object.keys(data).filter(j => j !== nombreJugador);
+        const contenedor = document.getElementById("jugadoresDisponibles");
+        contenedor.innerHTML = "<h3>Elige a tu contrincante:</h3>";
+        if (lista.length === 0) {
+          contenedor.innerHTML += "<p>No hay jugadores conectados aún 😿</p>";
+        } else {
+          lista.forEach(j => {
+            const btn = document.createElement("button");
+            btn.textContent = j;
+            btn.onclick = () => iniciarPartidaContra(j);
+            contenedor.appendChild(btn);
+          });
+        }
+      });
+    }
+
+    function iniciarPartidaContra(nombreEnemigo) {
+      enemigo = nombreEnemigo;
+      document.getElementById("enemigoSpan").innerText = enemigo;
+      document.getElementById("juego").style.display = "block";
+      document.getElementById("jugadoresDisponibles").style.display = "none";
+      db.ref("memoria/" + nombreJugador).set({ aciertos: 0, contra: enemigo });
+      iniciarTablero();
+      mostrarPuntajes();
+      escucharGanador();
+    }
+
+    function iniciarTablero() {
+      const mezclado = [...emojis].sort(() => 0.5 - Math.random());
+      const tablero = document.getElementById("tablero");
+      tablero.innerHTML = "";
+      mezclado.forEach((emoji, i) => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.dataset.valor = emoji;
+        div.dataset.index = i;
+        div.onclick = () => voltear(div);
+        tablero.appendChild(div);
+      });
+    }
+
+    function voltear(carta) {
+      if (yaGanó || cartasVolteadas.length === 2 || carta.innerText) return;
+      carta.innerText = carta.dataset.valor;
+      cartasVolteadas.push(carta);
+
+      if (cartasVolteadas.length === 2) {
+        setTimeout(() => {
+          const [a, b] = cartasVolteadas;
+          if (a.dataset.valor === b.dataset.valor) {
+            aciertos++;
+            a.classList.add("win");
+            b.classList.add("win");
+            db.ref("memoria/" + nombreJugador + "/aciertos").set(aciertos);
+            if (aciertos === 4) {
+              yaGanó = true;
+              db.ref("memoria_ganador").set({ ganador: nombreJugador, contrincante: enemigo });
+            }
+          } else {
+            a.innerText = "";
+            b.innerText = "";
+          }
+          cartasVolteadas = [];
+        }, 700);
+      }
+    }
+
+    function mostrarPuntajes() {
+      db.ref("memoria").on("value", snap => {
+        const data = snap.val() || {};
+        let txt = "<h3>🏅 Puntajes</h3>";
+        for (let jugador in data) {
+          const info = data[jugador];
+          if (info.contra === enemigo || jugador === nombreJugador) {
+            txt += `${jugador}: ${info.aciertos} pares<br>`;
+          }
+        }
+        document.getElementById("puntajes").innerHTML = txt;
+      });
+    }
+
+    function escucharGanador() {
+      db.ref("memoria_ganador").on("value", snap => {
+        const data = snap.val();
+        if (data) {
+          yaGanó = true;
+          if (data.ganador === nombreJugador) {
+            document.getElementById("ganador").innerHTML = `🎉 ¡Ganaste tú, ${data.ganador}!<br>Tu rival fue: ${data.contrincante}`;
+          } else if (data.contrincante === nombreJugador) {
+            document.getElementById("ganador").innerHTML = `💔 Ganó ${data.ganador}. Tu rival eras tú 😿`;
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
