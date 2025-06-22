@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ganador del Duelo 🎉</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #e3f2fd;
+      text-align: center;
+      padding: 30px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #2e7d32; }
+    .ganador {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .corona {
+      font-size: 30px;
+    }
+    .contrincante {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+    button {
+      margin-top: 30px;
+      padding: 10px 20px;
+      background: #42a5f5;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1e88e5;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🏆 Resultado del Duelo</h1>
+    <div class="ganador">👑 <span id="ganadorNombre"></span></div>
+    <div class="contrincante">
+      🤝 Contrincante: <span id="contrincanteNombre"></span><br>
+      🔢 Puntajes:<br>
+      <span id="puntosGanador"></span> puntos - <span id="puntosContrincante"></span> puntos
+    </div>
+    <button onclick="location.href='juego5.html'">🔁 Volver a retar</button>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD8_eJrmjXIm8-IQXtusuu65iknO9Y-ypM",
+      authDomain: "fps-game-dee3c.firebaseapp.com",
+      databaseURL: "https://fps-game-dee3c-default-rtdb.firebaseio.com",
+      projectId: "fps-game-dee3c",
+      storageBucket: "fps-game-dee3c.appspot.com",
+      messagingSenderId: "301239918953",
+      appId: "1:301239918953:web:575b40636e89bda4f91df8"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    window.onload = async () => {
+      const ganadorEl = document.getElementById("ganadorNombre");
+      const contrincanteEl = document.getElementById("contrincanteNombre");
+      const puntosGanadorEl = document.getElementById("puntosGanador");
+      const puntosContrincanteEl = document.getElementById("puntosContrincante");
+
+      const snap = await db.ref("memoria_ganador").once("value");
+      const data = snap.val();
+
+      if (!data) {
+        ganadorEl.innerText = "No hay ganador aún";
+        return;
+      }
+
+      const { ganador, contrincante } = data;
+      ganadorEl.innerText = ganador;
+      contrincanteEl.innerText = contrincante;
+
+      // Obtener puntos
+      const memoriaSnap = await db.ref("memoria").once("value");
+      const memData = memoriaSnap.val() || {};
+
+      const puntosGanador = memData[ganador]?.aciertos || 0;
+      const puntosContrincante = memData[contrincante]?.aciertos || 0;
+
+      puntosGanadorEl.innerText = puntosGanador;
+      puntosContrincanteEl.innerText = puntosContrincante;
+    };
+  </script>
+</body>
+</html>
