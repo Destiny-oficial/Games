@@ -15,15 +15,14 @@
       border-radius: 10px; box-shadow: 0 0 5px #aaa; cursor: pointer;
     }
     .win { background-color: #c8e6c9; }
-    .player-list { margin: 10px auto; max-width: 300px; }
     .player-list button { margin: 5px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
   </style>
 </head>
 <body>
   <h2>🧠 Juego de Memoria Multijugador UwU</h2>
   <input id="nombre" placeholder="Tu nombre" />
-  <button onclick="registrarJugador()">Ver jugadores disponibles</button>
-  <div id="jugadoresDisponibles" class="player-list"></div>
+  <button onclick="registrarJugador()">Ver jugadores</button>
+  <div id="jugadoresDisponibles"></div>
 
   <div id="juego" style="display:none;">
     <h3>Jugando contra: <span id="enemigoSpan"></span></h3>
@@ -52,8 +51,9 @@
 
     function registrarJugador() {
       nombreJugador = document.getElementById("nombre").value.trim();
-      if (!nombreJugador) return alert("Escribe tu nombre primero UwU");
+      if (!nombreJugador) return alert("Pon tu nombre UwU");
       db.ref("jugadores/" + nombreJugador).set({ online: true });
+      escucharSiMeRetoAlguien();
       mostrarJugadores();
     }
 
@@ -64,24 +64,40 @@
         const contenedor = document.getElementById("jugadoresDisponibles");
         contenedor.innerHTML = "<h3>Elige a tu contrincante:</h3>";
         if (lista.length === 0) {
-          contenedor.innerHTML += "<p>No hay jugadores conectados aún 😿</p>";
+          contenedor.innerHTML += "<p>No hay jugadores conectados 😿</p>";
         } else {
           lista.forEach(j => {
             const btn = document.createElement("button");
             btn.textContent = j;
-            btn.onclick = () => iniciarPartidaContra(j);
+            btn.onclick = () => {
+              enemigo = j;
+              iniciarJuego(true); // soy quien lo inicia
+              db.ref("retos/" + enemigo).set(nombreJugador); // avisar al rival
+            };
             contenedor.appendChild(btn);
           });
         }
       });
     }
 
-    function iniciarPartidaContra(nombreEnemigo) {
-      enemigo = nombreEnemigo;
+    function escucharSiMeRetoAlguien() {
+      db.ref("retos/" + nombreJugador).on("value", snap => {
+        const retador = snap.val();
+        if (retador && !enemigo) {
+          enemigo = retador;
+          iniciarJuego(false); // fui retado
+        }
+      });
+    }
+
+    function iniciarJuego(esQuienReta) {
+      db.ref("memoria/" + nombreJugador).set({ aciertos: 0, contra: enemigo });
+      if (esQuienReta) {
+        db.ref("memoria/" + enemigo).set({ aciertos: 0, contra: nombreJugador });
+      }
       document.getElementById("enemigoSpan").innerText = enemigo;
       document.getElementById("juego").style.display = "block";
       document.getElementById("jugadoresDisponibles").style.display = "none";
-      db.ref("memoria/" + nombreJugador).set({ aciertos: 0, contra: enemigo });
       iniciarTablero();
       mostrarPuntajes();
       escucharGanador();
