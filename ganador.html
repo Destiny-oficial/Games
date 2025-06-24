@@ -26,9 +26,6 @@
       font-size: 24px;
       font-weight: bold;
     }
-    .corona {
-      font-size: 30px;
-    }
     .contrincante {
       margin-top: 20px;
       font-size: 18px;
@@ -47,6 +44,27 @@
     button:hover {
       background: #1e88e5;
     }
+
+    /* Chat */
+    #chatMensajes {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 30px;
+      max-width: 400px;
+      height: 200px;
+      overflow-y: auto;
+      margin-inline: auto;
+      border-radius: 8px;
+      text-align: left;
+    }
+    #chatInput {
+      width: 90%;
+      padding: 8px;
+      border-radius: 6px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
@@ -61,6 +79,30 @@
     <button onclick="location.href='juego5.html'">🔁 Volver a retar</button>
   </div>
 
+  <div>
+    <h3>💬 Chat post-partida</h3>
+    <div id="chatMensajes"></div>
+    <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
+  </div>
+<div id="stickers" style="margin-top:10px;">
+  <h4>🧸 Stickers rápidos:</h4>
+  <img src="https://i.postimg.cc/CKvQzsSY/20250620-130731.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/2yzpW8gN/20250602-123918.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/DwRtgcRg/20241215-083512.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/FHYM36Cz/20250409-121154.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/Y9HTcCrL/20250409-121158.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/Nj81Jszz/1725067670221.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/3xQXF4nG/1725383342762.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/VsTB5HtD/1733424607896.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/3xQXF4nG/1725383342762.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/pdxBRhjv/1740892323731.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/wjDkCc7F/1744443313362.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/c4pmk54r/1748470942384.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/jjX45x67/1741423195071.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/hGdhypvP/IMG-20250623-224833-632.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/13TfrL9j/IMG-20250623-225003-281.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/wj31J6dN/IMG-20250623-225007-269.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+</div>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD8_eJrmjXIm8-IQXtusuu65iknO9Y-ypM",
@@ -74,7 +116,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let ganador = "", contrincante = "", nombreJugador = "";
+
     window.onload = async () => {
+      const guardado = localStorage.getItem("nombreJugador");
+      if (!guardado) nombreJugador = prompt("Tu nombre para el chat:");
+      else nombreJugador = guardado;
+
       const ganadorEl = document.getElementById("ganadorNombre");
       const contrincanteEl = document.getElementById("contrincanteNombre");
       const puntosGanadorEl = document.getElementById("puntosGanador");
@@ -88,20 +136,56 @@
         return;
       }
 
-      const { ganador, contrincante } = data;
+      ganador = data.ganador;
+      contrincante = data.contrincante;
+
       ganadorEl.innerText = ganador;
       contrincanteEl.innerText = contrincante;
 
-      // Obtener puntos
-      const memoriaSnap = await db.ref("memoria").once("value");
-      const memData = memoriaSnap.val() || {};
+      const memSnap = await db.ref("memoria").once("value");
+      const memData = memSnap.val() || {};
 
-      const puntosGanador = memData[ganador]?.aciertos || 0;
-      const puntosContrincante = memData[contrincante]?.aciertos || 0;
+      puntosGanadorEl.innerText = memData[ganador]?.aciertos || 0;
+      puntosContrincanteEl.innerText = memData[contrincante]?.aciertos || 0;
 
-      puntosGanadorEl.innerText = puntosGanador;
-      puntosContrincanteEl.innerText = puntosContrincante;
+      iniciarChat();
     };
+
+    function partidaID() {
+      return [ganador, contrincante].sort().join("_");
+    }
+
+    function iniciarChat() {
+      const id = partidaID();
+      const chatDiv = document.getElementById("chatMensajes");
+      const input = document.getElementById("chatInput");
+
+      db.ref("chat/" + id).on("child_added", snap => {
+        const msg = snap.val();
+        const p = document.createElement("p");
+        if (msg.texto.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+  p.innerHTML = `<b>${msg.usuario}:</b><br><img src="${msg.texto}" style="max-width:120px; max-height:120px; border-radius:8px; margin:4px 0;" />`;
+} else {
+  p.innerHTML = `<b>${msg.usuario}:</b> ${msg.texto}`;
+}
+        chatDiv.appendChild(p);
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+      });
+      
+
+      input.addEventListener("keypress", e => {
+        if (e.key === "Enter" && input.value.trim() !== "") {
+          const texto = input.value.trim();
+          db.ref("chat/" + id).push({ usuario: nombreJugador, texto });
+          input.value = "";
+        }
+      });
+    }
+    function enviarSticker(url) {
+  const texto = url;
+  const id = partidaID();
+  db.ref("chat/" + id).push({ usuario: nombreJugador, texto });
+}
   </script>
 </body>
 </html>
