@@ -133,6 +133,8 @@
     }
 
     function iniciarJuego(esQuienReta) {
+      // Limpia memoria_ganador anterior
+firebase.database().ref("memoria_ganador").remove();
       aciertos = 0;
       cartasVolteadas = [];
       yaGanó = false;
