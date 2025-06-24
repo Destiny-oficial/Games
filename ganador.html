@@ -77,6 +77,7 @@
       <span id="puntosGanador"></span> puntos - <span id="puntosContrincante"></span> puntos
     </div>
     <button onclick="location.href='juego5.html'">🔁 Volver a retar</button>
+    <button onclick="reiniciarJuego()">🔄 Reiniciar juego</button>
   </div>
 
   <div>
@@ -186,6 +187,18 @@
   const id = partidaID();
   db.ref("chat/" + id).push({ usuario: nombreJugador, texto });
 }
+    function reiniciarJuego() {
+      yaGanó = false;
+      enemigo = "";
+      document.getElementById("juego").style.display = "none";
+      document.getElementById("jugadoresDisponibles").style.display = "block";
+      db.ref("retos/" + nombreJugador).remove();
+      db.ref("memoria/" + nombreJugador).remove();
+      db.ref("partidas/" + partidaID()).remove();
+      db.ref("memoria_ganador").remove();
+      db.ref("chat/" + partidaID()).remove();
+      mostrarJugadores();
+    }
   </script>
 </body>
 </html>
