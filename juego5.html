@@ -1,4 +1,3 @@
-<!-- juego.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,6 +17,15 @@
     }
     .win { background: #b2ff59 !important; cursor: default; }
     button { margin: 5px; padding: 6px 12px; border-radius: 8px; }
+    #chatMensajes {
+      background: #fff; border: 1px solid #ccc; padding: 10px; margin-top: 30px;
+      max-width: 400px; height: 200px; overflow-y: auto; margin-inline: auto;
+      border-radius: 8px; text-align: left;
+    }
+    #chatInput {
+      width: 90%; padding: 8px; border-radius: 6px;
+      margin-top: 10px; border: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
@@ -30,10 +38,36 @@
     <h3>Jugando contra: <span id="enemigoSpan"></span></h3>
     <h4>Turno de: <span id="turnoSpan"></span></h4>
     <button onclick="reiniciarJuego()">🔄 Reiniciar juego</button>
+    <button id="btnMic" onclick="toggleMic()">🎙️ Activar Micrófono</button>
+<p id="estadoMic">🔇 Micrófono apagado</p>
     <div class="grid" id="tablero"></div>
     <div id="puntajes"></div>
     <div id="ganador"></div>
+
+    <!-- Chat en tiempo real -->
+    <h3>💬 Chat en tiempo real</h3>
+    <div id="chatMensajes"></div>
+    <input type="text" id="chatInput" placeholder="Escribe tu mensaje..." />
   </div>
+  <div id="stickers" style="margin-top:10px;">
+  <h4>🧸 Stickers rápidos:</h4>
+  <img src="https://i.postimg.cc/CKvQzsSY/20250620-130731.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/2yzpW8gN/20250602-123918.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/DwRtgcRg/20241215-083512.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/FHYM36Cz/20250409-121154.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/Y9HTcCrL/20250409-121158.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/Nj81Jszz/1725067670221.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/3xQXF4nG/1725383342762.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/VsTB5HtD/1733424607896.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/3xQXF4nG/1725383342762.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/pdxBRhjv/1740892323731.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/wjDkCc7F/1744443313362.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/c4pmk54r/1748470942384.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/jjX45x67/1741423195071.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/hGdhypvP/IMG-20250623-224833-632.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/13TfrL9j/IMG-20250623-225003-281.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+  <img src="https://i.postimg.cc/wj31J6dN/IMG-20250623-225007-269.jpg" onclick="enviarSticker(this.src)" style="width:60px; cursor:pointer; margin:5px;" />
+</div>
 
   <script>
     const firebaseConfig = {
@@ -117,10 +151,12 @@
       document.getElementById("enemigoSpan").innerText = enemigo;
       document.getElementById("juego").style.display = "block";
       document.getElementById("jugadoresDisponibles").style.display = "none";
+
       iniciarTablero();
       mostrarPuntajes();
       escucharGanador();
       escucharTurno();
+      iniciarChat();
     }
 
     function partidaID() {
@@ -161,7 +197,7 @@
             if (aciertos === 4) {
               yaGanó = true;
               db.ref("memoria_ganador").set({ ganador: nombreJugador, contrincante: enemigo });
-              window.location.href = "ganador.html"; // Redirección
+              window.location.href = "ganador.html";
             }
           } else {
             a.innerText = "?";
@@ -217,8 +253,113 @@
       db.ref("memoria/" + nombreJugador).remove();
       db.ref("partidas/" + partidaID()).remove();
       db.ref("memoria_ganador").remove();
+      db.ref("chat/" + partidaID()).remove();
       mostrarJugadores();
     }
+
+    function iniciarChat() {
+      const id = partidaID();
+      const chatDiv = document.getElementById("chatMensajes");
+      const input = document.getElementById("chatInput");
+
+      db.ref("chat/" + id).on("child_added", snap => {
+        const msg = snap.val();
+        const p = document.createElement("p");
+        if (msg.texto.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+  p.innerHTML = `<b>${msg.usuario}:</b><br><img src="${msg.texto}" style="max-width:120px; max-height:120px; border-radius:8px; margin:4px 0;" />`;
+} else {
+  p.innerHTML = `<b>${msg.usuario}:</b> ${msg.texto}`;
+}
+        chatDiv.appendChild(p);
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+      });
+
+      input.addEventListener("keypress", e => {
+        if (e.key === "Enter" && input.value.trim() !== "") {
+          const texto = input.value.trim();
+          db.ref("chat/" + id).push({ usuario: nombreJugador, texto });
+          input.value = "";
+        }
+      });
+    }
+    function enviarSticker(url) {
+  const texto = url;
+  const id = partidaID();
+  db.ref("chat/" + id).push({ usuario: nombreJugador, texto });
+}
+let localStream;
+let peerConnection;
+const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+function toggleMic() {
+  const estado = document.getElementById("estadoMic");
+  if (!localStream) {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      localStream = stream;
+      document.getElementById("btnMic").innerText = "🔴 Apagar Micrófono";
+      estado.innerText = "🔊 Hablando...";
+      iniciarConexionVoz();
+    }).catch(() => {
+      alert("No se pudo acceder al micrófono.");
+    });
+  } else {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+    if (peerConnection) peerConnection.close();
+    peerConnection = null;
+    document.getElementById("btnMic").innerText = "🎙️ Activar Micrófono";
+    estado.innerText = "🔇 Micrófono apagado";
+  }
+}
+
+function iniciarConexionVoz() {
+  peerConnection = new RTCPeerConnection(servers);
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  peerConnection.ontrack = e => {
+    const audio = new Audio();
+    audio.srcObject = e.streams[0];
+    audio.play();
+  };
+
+  const canal = "voz_" + partidaID();
+
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) {
+      firebase.database().ref(canal + "/candidates/" + nombreJugador).push(JSON.stringify(e.candidate));
+    }
+  };
+
+  firebase.database().ref(canal + "/ofertas").once("value", async snap => {
+    const oferta = snap.val();
+    if (!oferta) {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      firebase.database().ref(canal + "/ofertas").set({ sdp: offer, de: nombreJugador });
+    }
+  });
+
+  firebase.database().ref(canal + "/ofertas").on("value", async snap => {
+    const data = snap.val();
+    if (data && data.de !== nombreJugador) {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      firebase.database().ref(canal + "/respuestas").set({ sdp: answer, de: nombreJugador });
+    }
+  });
+
+  firebase.database().ref(canal + "/respuestas").on("value", async snap => {
+    const data = snap.val();
+    if (data && data.de !== nombreJugador && peerConnection.signalingState !== "stable") {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    }
+  });
+
+  firebase.database().ref(canal + "/candidates/" + enemigo).on("child_added", snap => {
+    const candidate = new RTCIceCandidate(JSON.parse(snap.val()));
+    peerConnection.addIceCandidate(candidate);
+  });
+}
   </script>
 </body>
 </html>
