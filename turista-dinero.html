@@ -103,8 +103,10 @@
       jugador = "jugador2";
       document.getElementById("idJugador").innerText = "Eres Jugador 2 | Sala: " + sala;
 
-      db.ref("salas/" + sala + "/posiciones/jugador2").set(0);
-      iniciarJuego();
+      db.ref("salas/" + sala).update({
+  "posiciones/jugador2": 0,
+  "dinero/jugador2": 15000
+});
     }
 
     function iniciarJuego() {
