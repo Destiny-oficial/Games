@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Turista Mexicano - Dinero</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f2f2f2; }
+    #tablero {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      max-width: 600px;
+      margin: 10px auto;
+    }
+    .estado {
+      background: #fff;
+      border: 1px solid #aaa;
+      height: 60px;
+      font-size: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .jugador1 { background-color: lightblue !important; }
+    .jugador2 { background-color: lightcoral !important; }
+  </style>
+</head>
+<body>
+  <h1>🎲 Turista Mexicano - Dinero 💰</h1>
+
+  <div>
+    <input type="text" id="codigoSala" placeholder="Código de sala" />
+    <button onclick="crearSala()">Crear sala</button>
+    <button onclick="unirseSala()">Unirse a sala</button>
+    <p id="idJugador"></p>
+  </div>
+
+  <div id="juego" style="display:none">
+    <p>Turno de: <span id="turnoTexto">-</span></p>
+    <p>Dinero J1: <span id="dinero1">-</span> | Dinero J2: <span id="dinero2">-</span></p>
+    <button onclick="tirarDado()" id="botonDado">Tirar dado 🎲</button>
+    <p>Dado: <span id="dadoTexto">-</span></p>
+    <div id="tablero"></div>
+    <div id="log"></div>
+    <!-- Continuación del código anterior -->
+<!-- Dentro del <body>... abajo de <div id="log"> -->
+<div id="mejoras" style="margin-top:10px; display:none;">
+  <p>Mejorar propiedad actual:</p>
+  <button onclick="mejorarPropiedad('casa')">🏠 Casa ($500)</button>
+  <button onclick="mejorarPropiedad('hotel')">🏨 Hotel ($1500)</button>
+  <button onclick="mejorarPropiedad('estacion')">🚉 Estación ($1000)</button>
+</div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDG6eb2jegM9v4WRMDMS5s1h-ivLQ_DBkQ",
+      authDomain: "turismo-mexicanl.firebaseapp.com",
+      databaseURL: "https://turismo-mexicanl-default-rtdb.firebaseio.com",
+      projectId: "turismo-mexicanl",
+      storageBucket: "turismo-mexicanl.firebasestorage.app",
+      messagingSenderId: "1092380770248",
+      appId: "1:1092380770248:web:7ad811ecf0d985bd400afd",
+      measurementId: "G-H3T5ZL0V4C"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const estados = [
+      "Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua", "CDMX", "Coahuila",
+      "Colima", "Durango", "Edo. México", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "Michoacán",
+      "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí",
+      "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"
+    ];
+
+    let sala = "";
+    let jugador = "";
+
+    function crearSala() {
+      sala = Math.random().toString(36).substring(2, 8);
+      jugador = "jugador1";
+      document.getElementById("codigoSala").value = sala;
+      document.getElementById("idJugador").innerText = "Eres Jugador 1 | Sala: " + sala;
+
+      db.ref("salas/" + sala).set({
+        turno: "jugador1",
+        posiciones: { jugador1: 0, jugador2: 0 },
+        propiedades: Array(estados.length).fill(null),
+        dado: 0,
+        dinero: { jugador1: 15000, jugador2: 15000 },
+        log: "Sala creada. Esperando jugador 2...",
+        terminado: false
+      });
+
+      iniciarJuego();
+    }
+
+    function unirseSala() {
+      sala = document.getElementById("codigoSala").value.trim();
+      if (!sala) return alert("Ingresa un código válido");
+      jugador = "jugador2";
+      document.getElementById("idJugador").innerText = "Eres Jugador 2 | Sala: " + sala;
+
+      db.ref("salas/" + sala + "/posiciones/jugador2").set(0);
+      iniciarJuego();
+    }
+
+    function iniciarJuego() {
+  document.getElementById("juego").style.display = "block";
+
+  estados.forEach((estado, i) => {
+    const div = document.createElement("div");
+    div.className = "estado";
+    div.id = "casilla" + i;
+    div.innerText = estado;
+    document.getElementById("tablero").appendChild(div);
+  });
+
+  db.ref("salas/" + sala).on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    const { turno, posiciones, propiedades, dado, log, dinero, terminado, mejoras } = data;
+    document.getElementById("turnoTexto").innerText = turno === "jugador1" ? "Jugador 1" : "Jugador 2";
+    document.getElementById("dadoTexto").innerText = dado;
+    document.getElementById("log").innerText = log;
+    document.getElementById("dinero1").innerText = "$" + dinero.jugador1;
+    document.getElementById("dinero2").innerText = "$" + dinero.jugador2;
+
+    estados.forEach((estado, i) => {
+      const div = document.getElementById("casilla" + i);
+      div.className = "estado";
+      let texto = estado;
+
+      if (posiciones.jugador1 === i) div.classList.add("jugador1");
+      if (posiciones.jugador2 === i) div.classList.add("jugador2");
+
+      if (mejoras && mejoras[i]) {
+        texto += " - " + mejoras[i]; // Mostrar tipo de mejora
+      }
+
+      div.innerText = texto;
+    });
+
+    document.getElementById("botonDado").disabled = (turno !== jugador || terminado);
+    document.getElementById("mejoras").style.display = "none";
+  });
+}
+
+function tirarDado() {
+  const dado = Math.floor(Math.random() * 6) + 1;
+  db.ref("salas/" + sala + "/dado").set(dado);
+
+  db.ref("salas/" + sala).once("value").then(snapshot => {
+    const data = snapshot.val();
+    if (data.terminado) return;
+
+    const pos = data.posiciones[jugador];
+    const nuevaPos = (pos + dado) % estados.length;
+    const otroJugador = jugador === "jugador1" ? "jugador2" : "jugador1";
+
+    db.ref("salas/" + sala + "/posiciones/" + jugador).set(nuevaPos).then(() => {
+      let logMsg = `🎲 ${jugador === "jugador1" ? "Jugador 1" : "Jugador 2"} cayó en ${estados[nuevaPos]}. `;
+      const propiedad = data.propiedades[nuevaPos];
+      const mejora = (data.mejoras && data.mejoras[nuevaPos]) || null;
+      let dineroActual = data.dinero[jugador];
+      let rentaExtra = 0;
+
+      if (mejora === "casa") rentaExtra = 300;
+      if (mejora === "hotel") rentaExtra = 1000;
+      if (mejora === "estacion") rentaExtra = 700;
+
+      if (!propiedad) {
+        if (dineroActual >= 1000) {
+          data.propiedades[nuevaPos] = jugador;
+          dineroActual -= 1000;
+          db.ref("salas/" + sala + "/propiedades").set(data.propiedades);
+          logMsg += "La compró por $1000. 🏠";
+        } else {
+          logMsg += "No tiene dinero para comprarla.";
+        }
+      } else if (propiedad !== jugador) {
+        dineroActual -= (500 + rentaExtra);
+        const dineroOtro = data.dinero[otroJugador] + 500 + rentaExtra;
+        db.ref("salas/" + sala + "/dinero/" + otroJugador).set(dineroOtro);
+        logMsg += `Pagó $${500 + rentaExtra} de renta. 💸`;
+      } else {
+        // Mostrar botones de mejora si es tu propiedad
+        document.getElementById("mejoras").style.display = "block";
+        document.getElementById("mejoras").dataset.casilla = nuevaPos;
+        logMsg += "Ya es suya.";
+      }
+
+      db.ref("salas/" + sala + "/dinero/" + jugador).set(dineroActual);
+
+      if (dineroActual <= 0) {
+        db.ref("salas/" + sala + "/log").set(`☠️ ${jugador === "jugador1" ? "Jugador 1" : "Jugador 2"} ha perdido. ¡Fin del juego!`);
+        db.ref("salas/" + sala + "/terminado").set(true);
+        return;
+      }
+
+      db.ref("salas/" + sala + "/log").set(logMsg);
+      db.ref("salas/" + sala + "/turno").set(otroJugador);
+    });
+  });
+}
+function mejorarPropiedad(tipo) {
+  const costo = tipo === "casa" ? 500 : tipo === "hotel" ? 1500 : 1000;
+
+  db.ref("salas/" + sala).once("value").then(snapshot => {
+    const data = snapshot.val();
+    const dinero = data.dinero[jugador];
+    const casilla = parseInt(document.getElementById("mejoras").dataset.casilla);
+
+    if (data.propiedades[casilla] !== jugador) {
+      alert("Esa propiedad no es tuya.");
+      return;
+    }
+
+    if (dinero < costo) {
+      alert("No tienes suficiente dinero.");
+      return;
+    }
+
+    const nuevasMejoras = data.mejoras || Array(estados.length).fill(null);
+    nuevasMejoras[casilla] = tipo;
+
+    db.ref("salas/" + sala + "/mejoras").set(nuevasMejoras);
+    db.ref("salas/" + sala + "/dinero/" + jugador).set(dinero - costo);
+    db.ref("salas/" + sala + "/log").set(`🔧 ${jugador === "jugador1" ? "Jugador 1" : "Jugador 2"} mejoró ${estados[casilla]} a ${tipo}.`);
+    document.getElementById("mejoras").style.display = "none";
+  });
+}
+  </script>
+</body>
+</html>
