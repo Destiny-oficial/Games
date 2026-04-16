@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Laberinto Mario + Geometry Dash</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 500,
+    physics: {
+        default: 'arcade',
+        arcade: { gravity: { y: 600 }, debug: false }
+    },
+    scene: { preload, create, update }
+};
+
+let player, cursors, coins, bombs, score = 0, scoreText;
+
+function preload() {
+    this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
+    this.load.image('coin', 'https://labs.phaser.io/assets/sprites/gold_1.png');
+    this.load.image('bomb', 'https://labs.phaser.io/assets/sprites/bomb.png');
+}
+
+function create() {
+    // plataformas tipo laberinto
+    const platforms = this.physics.add.staticGroup();
+    platforms.create(400, 490, 'ground').setScale(2).refreshBody(); // piso
+    platforms.create(150, 400, 'ground');
+    platforms.create(650, 400, 'ground');
+    platforms.create(400, 300, 'ground');
+    platforms.create(200, 200, 'ground');
+    platforms.create(600, 150, 'ground');
+
+    // jugador
+    player = this.physics.add.sprite(50, 450, null).setTint(0xff0000).setSize(30,30);
+    player.setBounce(0.2);
+    player.setCollideWorldBounds(true);
+
+    // monedas en lugares altos
+    coins = this.physics.add.group();
+    coins.create(150, 370, 'coin');
+    coins.create(650, 370, 'coin');
+    coins.create(400, 270, 'coin');
+    coins.create(200, 170, 'coin');
+    coins.create(600, 120, 'coin');
+
+    // bombas estratégicas
+    bombs = this.physics.add.group();
+    bombs.create(400, 460, 'bomb');
+    bombs.create(300, 280, 'bomb');
+    bombs.create(500, 140, 'bomb');
+
+    // colisiones
+    this.physics.add.collider(player, platforms);
+    this.physics.add.collider(coins, platforms);
+    this.physics.add.collider(bombs, platforms);
+
+    this.physics.add.overlap(player, coins, collectCoin, null, this);
+    this.physics.add.collider(player, bombs, hitBomb, null, this);
+
+    // controles
+    cursors = this.input.keyboard.createCursorKeys();
+
+    // marcador
+    scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '24px', fill: '#000' });
+
+    // controles táctiles (móvil)
+    this.input.on('pointerdown', () => {
+        if(player.body.touching.down) {
+            player.setVelocityY(-350);
+        }
+    });
+}
+
+function update() {
+    if (cursors.left.isDown) {
+        player.setVelocityX(-160);
+    } else if (cursors.right.isDown) {
+        player.setVelocityX(160);
+    } else {
+        player.setVelocityX(0);
+    }
+
+    if (cursors.up.isDown && player.body.touching.down) {
+        player.setVelocityY(-350);
+    }
+}
+
+function collectCoin(player, coin) {
+    coin.disableBody(true, true);
+    score += 10;
+    scoreText.setText('Score: ' + score);
+
+    // cuando recolectas todas las monedas, aparecen más bombas
+    if (coins.countActive(true) === 0) {
+        let x = Phaser.Math.Between(100, 700);
+        let bomb = bombs.create(x, 16, 'bomb');
+        bomb.setBounce(1);
+        bomb.setCollideWorldBounds(true);
+        bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+    }
+}
+
+function hitBomb(player, bomb) {
+    this.physics.pause();
+    player.setTint(0xff0000);
+    scoreText.setText('Game Over! Score: ' + score);
+}
+
+new Phaser.Game(config);
+</script>
+</body>
+</html>
