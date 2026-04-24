@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ranking - Anime Offis</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #00aaff;
+            --secondary: #ff00aa;
+            --bg: #050505;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border-glass: rgba(0, 170, 255, 0.3);
+            --gold: #ffd700;
+            --silver: #c0c0c0;
+            --bronze: #cd7f32;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at center, #111 0%, var(--bg) 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .ranking-container {
+            width: 90%;
+            max-width: 500px;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 20px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 170, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0;
+            margin-bottom: 5px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--primary);
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+        }
+
+        .leaderboard-list::-webkit-scrollbar { width: 6px; }
+        .leaderboard-list::-webkit-scrollbar-thumb { background-color: var(--primary); border-radius: 10px; }
+
+        .player-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            transition: transform 0.2s ease;
+            animation: slideIn 0.4s ease forwards;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .player-row:hover {
+            background: rgba(0, 170, 255, 0.1);
+            transform: translateX(5px);
+            border-color: var(--primary);
+        }
+
+        @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+
+        .rank { font-size: 1.2rem; font-weight: bold; width: 30px; color: #888; text-align: center;}
+        
+        .player-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 10px;
+            overflow: hidden;
+        }
+
+        .name-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .name {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .date-text {
+            font-size: 0.65rem;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .score-val {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--secondary);
+            text-shadow: 0 0 10px rgba(255, 0, 170, 0.5);
+            text-align: right;
+        }
+
+        .rank-1 { border-color: var(--gold); background: rgba(255, 215, 0, 0.05); }
+        .rank-1 .rank { color: var(--gold); text-shadow: 0 0 10px var(--gold); font-size: 1.5rem; }
+        .rank-2 { border-color: var(--silver); }
+        .rank-2 .rank { color: var(--silver); }
+        .rank-3 { border-color: var(--bronze); }
+        .rank-3 .rank { color: var(--bronze); }
+
+        .btn-container { text-align: center; margin-top: 20px; }
+
+        .game-btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: white;
+            background: rgba(0, 170, 255, 0.1);
+            border: 2px solid var(--primary);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .game-btn:hover {
+            background: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 170, 255, 0.6);
+            color: #000;
+        }
+
+        #loading-text {
+            text-align: center;
+            color: var(--primary);
+            font-style: italic;
+            margin: 20px 0;
+            animation: pulse 1.5s infinite;
+        }
+
+        .verified-badge {
+            color: #00ffaa;
+            font-size: 0.9rem;
+            text-shadow: 0 0 5px #00ffaa;
+            display: inline-block;
+        }
+
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+    <div class="ranking-container">
+        <h1>👑 TOP AGENTES</h1>
+        <div class="subtitle">Base de Datos Anime Offis</div>
+
+        <div id="loading-text">Sincronizando datos...</div>
+
+        <ul class="leaderboard-list" id="leaderboard-list"></ul>
+
+        <div class="btn-container">
+            <a href="index.html" class="game-btn">Volver al Sistema</a>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAu0WbdAi8_yA2S6qKMUCLfty5w0PxgKVE",
+            authDomain: "anime-offis.firebaseapp.com",
+            projectId: "anime-offis",
+            storageBucket: "anime-offis.appspot.com",
+            messagingSenderId: "377121993034",
+            appId: "1:377121993034:web:a4ba7995e827bcbea411b3"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const loadingText = document.getElementById('loading-text');
+
+        async function loadLeaderboard() {
+            try {
+                const querySnapshot = await db.collection("juegosor").orderBy("score", "desc").limit(20).get();
+                loadingText.style.display = 'none';
+                
+                if (querySnapshot.empty) {
+                    leaderboardList.innerHTML = '<li style="text-align:center; color:#888;">No hay datos registrados aún. ¡Sé el primero!</li>';
+                    return;
+                }
+
+                let rankPosition = 1;
+                const now = new Date();
+                
+                for (const doc of querySnapshot.docs) {
+                    const data = doc.data();
+                    const userId = doc.id;
+                    const username = data.username || "Agente Desconocido";
+                    const score = data.score || 0;
+                    
+                    // Manejar la fecha (timestamp de Firebase a Date de JavaScript)
+                    let scoreDate = now;
+                    let dateStr = "Reciente";
+                    if (data.timestamp) {
+                        scoreDate = data.timestamp.toDate();
+                        dateStr = scoreDate.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    }
+
+                    // --- SISTEMA DE VERIFICACIÓN (JUEZ INVISIBLE) ---
+                    // Si estamos evaluando al #1, comprobamos si ya pasó 30 días
+                    if (rankPosition === 1 && data.timestamp) {
+                        const diffTime = Math.abs(now - scoreDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays >= 30) {
+                            // Actualizamos el perfil del usuario en la colección 'users'
+                            // arrayUnion añade "topbd" solo si no existe ya en el array
+                            db.collection("users").doc(userId).set({
+                                verified: firebase.firestore.FieldValue.arrayUnion("topbd")
+                            }, { merge: true }).catch(err => console.log("Permiso denegado para auto-verificar", err));
+                        }
+                    }
+
+                    // --- CONSULTAR SI ESTE USUARIO TIENE EL BADGE ---
+                    let badgeHTML = "";
+                    try {
+                        const userDoc = await db.collection("users").doc(userId).get();
+                        if (userDoc.exists) {
+                            const userData = userDoc.data();
+                            if (userData.verified && userData.verified.includes("topbd")) {
+                                badgeHTML = `<span class="verified-badge" title="Top Agente BD Verificado">🛡️</span>`;
+                            }
+                        }
+                    } catch(e) {
+                        // Ignorar si hay error de lectura
+                    }
+
+                    // --- CONSTRUIR LA INTERFAZ ---
+                    const li = document.createElement('li');
+                    li.className = 'player-row';
+                    
+                    let rankIcon = rankPosition;
+                    if (rankPosition === 1) { li.classList.add('rank-1'); rankIcon = '🥇'; } 
+                    else if (rankPosition === 2) { li.classList.add('rank-2'); rankIcon = '🥈'; } 
+                    else if (rankPosition === 3) { li.classList.add('rank-3'); rankIcon = '🥉'; }
+
+                    li.style.animationDelay = `${rankPosition * 0.1}s`;
+
+                    li.innerHTML = `
+                        <div class="rank">${rankIcon}</div>
+                        <div class="player-info">
+                            <div class="name-container">
+                                <span class="name">${username}</span>
+                                ${badgeHTML}
+                            </div>
+                            <div class="date-text">Logrado: ${dateStr}</div>
+                        </div>
+                        <div class="score-val">${score}</div>
+                    `;
+
+                    leaderboardList.appendChild(li);
+                    rankPosition++;
+                }
+            } catch (error) {
+                console.error("Error obteniendo documentos: ", error);
+                loadingText.innerText = "Error de conexión con el servidor.";
+                loadingText.style.color = "red";
+            }
+        }
+
+        window.onload = loadLeaderboard;
+    </script>
+</body>
+</html>
