@@ -3,26 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego de Disparos - Anime Offis</title>
+    <title>Juego Pro - Anime Offis</title>
     <style>
-        body { text-align: center; background-color: black; color: white; overflow: hidden; font-family: 'Inter', sans-serif; }
-        canvas { display: block; margin: auto; border: 2px solid #00aaff; background: #050510; }
-        #score { font-size: 20px; margin-top: 10px; color: #00aaff; font-weight: bold; }
-        .ground { position: absolute; bottom: 0; width: 100%; height: 30px; background-color: #006400; z-index: -1; }
-        #joystick { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); }
+        :root {
+            --primary: #00aaff;
+            --accent: #ff00aa;
+        }
+        body { 
+            text-align: center; 
+            background-color: #050510; 
+            color: white; 
+            overflow: hidden; 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #ui-layer {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        #score { 
+            font-size: 24px; 
+            color: var(--primary); 
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
+        }
+        canvas { 
+            display: block; 
+            background: radial-gradient(circle at center, #1a1a3a, #050510);
+            border: 2px solid var(--glass-border);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            max-width: 95vw;
+        }
+        /* Controles */
+        #joystick { 
+            position: fixed; 
+            bottom: 40px; 
+            left: 50px; 
+        }
         #shootBtn { 
-            position: absolute; bottom: 20px; right: 20px; 
-            background: linear-gradient(90deg, #ff00aa, #8e54ff); 
-            border: none; border-radius: 50%; width: 70px; height: 70px; 
-            font-size: 30px; color: white; cursor: pointer; 
-            box-shadow: 0 0 15px rgba(255, 0, 170, 0.5);
+            position: fixed; 
+            bottom: 40px; 
+            right: 50px; 
+            background: linear-gradient(135deg, var(--accent), #8e54ff); 
+            border: none; 
+            border-radius: 50%; 
+            width: 80px; 
+            height: 80px; 
+            font-size: 35px; 
+            color: white; 
+            cursor: pointer; 
+            box-shadow: 0 0 20px rgba(255, 0, 170, 0.4);
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+        #shootBtn:active { transform: scale(0.9); }
+
+        @media (max-width: 600px) {
+            #joystick { left: 50%; transform: translateX(-110%); bottom: 100px; }
+            #shootBtn { right: 20px; bottom: 20px; width: 70px; height: 70px; }
         }
     </style>
     <script src="https://unpkg.com/nipplejs@0.8.6/dist/nipplejs.js"></script>
 </head>
 <body>
-    <p id="score">Puntaje: 0</p>
-    <canvas id="gameCanvas" width="400" height="300"></canvas>
+    <div id="ui-layer">
+        <div id="score">PUNTAJE: 0</div>
+        <div style="color: var(--accent); font-weight: bold;">ANIME OFFIS AF</div>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    
     <div id="joystick"></div>
     <button id="shootBtn">🔫</button>
 
@@ -30,136 +92,113 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        let player = { x: 175, y: 220, width: 30, height: 30, speed: 4 };
-        let bullets = [];
-        let enemies = [];
-        let enemyBullets = [];
-        let score = 0;
-        let gameOver = false; // Variable clave para detener el juego
+        // Ajuste dinámico de resolución
+        function resize() {
+            canvas.width = Math.min(window.innerWidth * 0.9, 800);
+            canvas.height = Math.min(window.innerHeight * 0.6, 500);
+        }
+        window.addEventListener('resize', resize);
+        resize();
 
-        const playerImage = new Image(); playerImage.src = 'player.png';
-        const enemyImage = new Image(); enemyImage.src = 'enemy.png';
-        const groundImage = new Image(); groundImage.src = 'suelo.png';
+        let player = { x: canvas.width/2, y: canvas.height - 80, width: 40, height: 40, speed: 5 };
+        let bullets = [], enemies = [], enemyBullets = [], score = 0, gameOver = false;
+
+        const imgP = new Image(); imgP.src = 'player.png';
+        const imgE = new Image(); imgE.src = 'enemy.png';
+        const imgG = new Image(); imgG.src = 'suelo.png';
 
         const joystick = nipplejs.create({
             zone: document.getElementById('joystick'),
             mode: 'static',
-            position: { left: '50%', bottom: '150px' },
+            position: { left: '50px', bottom: '120px' },
             color: '#00aaff',
-            size: 120
+            size: 130
         });
 
-        // Manejo de movimiento suave
         let moveDir = { x: 0, y: 0 };
-        joystick.on('move', (evt, data) => {
-            if (data.vector) {
-                moveDir.x = data.vector.x;
-                moveDir.y = -data.vector.y;
-            }
-        });
+        joystick.on('move', (e, data) => { if(data.vector) { moveDir.x = data.vector.x; moveDir.y = -data.vector.y; }});
         joystick.on('end', () => { moveDir = { x: 0, y: 0 }; });
 
         function shoot() {
-            if (gameOver) return;
-            bullets.push({ x: player.x + 11, y: player.y, width: 8, height: 15, speed: 7 });
+            if(!gameOver) bullets.push({ x: player.x + player.width/2 - 4, y: player.y, width: 8, height: 20, speed: 8 });
         }
 
         function spawnEnemy() {
-            if (gameOver) return;
-            let x = Math.random() * (canvas.width - 30);
-            enemies.push({ x, y: 10, width: 30, height: 30, speed: 1.5, direction: 1 });
+            if(gameOver) return;
+            enemies.push({ x: Math.random()*(canvas.width-40), y: -40, width: 40, height: 40, speed: 2, dir: 1 });
         }
 
-        function enemyShoot(enemy) {
-            if (gameOver) return;
-            enemyBullets.push({ x: enemy.x + 12, y: enemy.y + 30, width: 6, height: 12, speed: 4 });
-        }
+        function update() {
+            if(gameOver) return;
 
-        function checkCollisions() {
-            // Balas del jugador vs Enemigos
-            bullets.forEach((bullet, bIndex) => {
-                enemies.forEach((enemy, eIndex) => {
-                    if (bullet.x < enemy.x + enemy.width && bullet.x + bullet.width > enemy.x &&
-                        bullet.y < enemy.y + enemy.height && bullet.y + bullet.height > enemy.y) {
-                        bullets.splice(bIndex, 1);
-                        enemies.splice(eIndex, 1);
-                        score++;
-                        document.getElementById("score").innerText = "Puntaje: " + score;
+            player.x += moveDir.x * player.speed;
+            player.y += moveDir.y * player.speed;
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            player.y = Math.max(0, Math.min(canvas.height - player.height - 40, player.y));
+
+            bullets.forEach(b => b.y -= b.speed);
+            enemyBullets.forEach(b => b.y += b.speed);
+            
+            enemies.forEach(e => {
+                e.y += 0.5; // Los enemigos bajan lento
+                e.x += e.speed * e.dir;
+                if(e.x <= 0 || e.x >= canvas.width - e.width) e.dir *= -1;
+                if(Math.random() < 0.015) enemyBullets.push({x: e.x+15, y: e.y+40, width: 6, height: 12, speed: 4});
+            });
+
+            // Colisiones
+            bullets.forEach((b, bi) => {
+                enemies.forEach((e, ei) => {
+                    if(b.x < e.x+e.width && b.x+b.width > e.x && b.y < e.y+e.height && b.y+b.height > e.y) {
+                        bullets.splice(bi, 1); enemies.splice(ei, 1);
+                        score++; document.getElementById("score").innerText = "PUNTAJE: " + score;
                     }
                 });
             });
 
-            // Balas enemigas vs Jugador
-            enemyBullets.forEach((bullet) => {
-                if (!gameOver && bullet.x < player.x + player.width && bullet.x + bullet.width > player.x &&
-                    bullet.y < player.y + player.height && bullet.y + bullet.height > player.y) {
-                    endGame();
+            enemyBullets.forEach(b => {
+                if(b.x < player.x+player.width && b.x+b.width > player.x && b.y < player.y+player.height && b.y+b.height > player.y) {
+                    gameOver = true;
+                    alert("GAME OVER - Puntaje: " + score);
+                    location.reload();
                 }
             });
-        }
-
-        function endGame() {
-            gameOver = true; // Bloqueamos actualizaciones
-            alert("¡Perdiste! Puntaje final: " + score);
-            location.reload();
-        }
-
-        function update() {
-            if (gameOver) return;
-
-            // Movimiento del jugador
-            player.x += moveDir.x * player.speed;
-            player.y += moveDir.y * player.speed;
-
-            // Límites del canvas
-            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-            player.y = Math.max(0, Math.min(canvas.height - player.height - 10, player.y));
-
-            bullets.forEach(bullet => bullet.y -= bullet.speed);
-            enemyBullets.forEach(bullet => bullet.y += bullet.speed);
-
-            bullets = bullets.filter(b => b.y > -20);
-            enemyBullets = enemyBullets.filter(b => b.y < canvas.height + 20);
-
-            enemies.forEach(enemy => {
-                enemy.x += enemy.speed * enemy.direction;
-                if (enemy.x <= 0 || enemy.x >= canvas.width - enemy.width) enemy.direction *= -1;
-                if (Math.random() < 0.02) enemyShoot(enemy);
-            });
-
-            checkCollisions();
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Suelo (si no carga imagen, no rompe el dibujo)
-            if (groundImage.complete) {
-                ctx.drawImage(groundImage, 0, canvas.height - 40, canvas.width, 40);
+            // Suelo que siempre cubre el ancho del canvas
+            if(imgG.complete) {
+                ctx.drawImage(imgG, 0, canvas.height - 50, canvas.width, 50);
+            } else {
+                ctx.fillStyle = "#004400";
+                ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
             }
 
-            ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-
+            ctx.drawImage(imgP, player.x, player.y, player.width, player.height);
+            
             ctx.fillStyle = "#00ffcc";
             bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
 
             ctx.fillStyle = "#ff00aa";
             enemyBullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
 
-            enemies.forEach(e => ctx.drawImage(enemyImage, e.x, e.y, e.width, e.height));
-        }
-
-        function gameLoop() {
-            if (!gameOver) {
-                update();
-                draw();
-                requestAnimationFrame(gameLoop);
-            }
+            enemies.forEach(e => ctx.drawImage(imgE, e.x, e.y, e.width, e.height));
+            
+            if(!gameOver) requestAnimationFrame(draw);
         }
 
         document.getElementById("shootBtn").addEventListener("click", shoot);
-        setInterval(spawnEnemy, 2500); // Aparecen más seguido para que sea divertido
-        gameLoop();
+        setInterval(spawnEnemy, 2000);
+        
+        function loop() {
+            update();
+            setTimeout(() => { if(!gameOver) loop(); }, 1000/60);
+        }
+        
+        loop();
+        draw();
     </script>
 </body>
 </html>
