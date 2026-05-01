@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Offis - Shooter Fix</title>
+    <title>Anime Offis - Pasto Total</title>
     <style>
         :root { --primary: #00aaff; --accent: #ff00aa; }
         body { 
@@ -11,18 +11,20 @@
             font-family: 'Inter', sans-serif; overflow: hidden;
             display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
         }
-        #ui { position: absolute; top: 10px; width: 100%; max-width: 800px; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 10; }
-        #score { font-size: 24px; color: var(--primary); font-weight: bold; }
+        #ui { position: absolute; top: 10px; width: 100%; max-width: 800px; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 10; pointer-events: none; }
+        #score { font-size: 24px; color: var(--primary); font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
         canvas { 
-            background: #050510; border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 10px; max-width: 98vw; max-height: 70vh; 
+            border: 2px solid rgba(255,255,255,0.1); 
+            border-radius: 15px; max-width: 95vw; max-height: 75vh; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
-        #joystick { position: fixed; bottom: 40px; left: 10%; }
+        #joystick { position: fixed; bottom: 40px; left: 10%; z-index: 20; }
         #shootBtn { 
             position: fixed; bottom: 40px; right: 10%; 
             background: linear-gradient(135deg, var(--accent), #8e54ff); 
             border: none; border-radius: 50%; width: 80px; height: 80px; 
             font-size: 35px; color: white; z-index: 20; outline: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
     </style>
     <script src="https://unpkg.com/nipplejs@0.8.6/dist/nipplejs.js"></script>
@@ -30,7 +32,7 @@
 <body>
     <div id="ui">
         <div id="score">PUNTAJE: 0</div>
-        <div style="color: var(--accent)">ANIME OFFIS AF</div>
+        <div style="color: var(--accent); font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">ANIME OFFIS AF</div>
     </div>
     <canvas id="gameCanvas"></canvas>
     <div id="joystick"></div>
@@ -42,21 +44,20 @@
 
         function resize() {
             canvas.width = Math.min(window.innerWidth * 0.95, 800);
-            canvas.height = Math.min(window.innerHeight * 0.65, 500);
+            canvas.height = Math.min(window.innerHeight * 0.70, 550);
         }
         window.addEventListener('resize', resize);
         resize();
 
-        // --- CONFIGURACIÓN DE IMÁGENES ---
+        // --- CARGA DE ASSETS ---
         const imgP = new Image(); imgP.src = 'player.png';
         const imgE = new Image(); imgE.src = 'enemy.png';
         const imgSuelo = new Image(); imgSuelo.src = 'suelo.png';
 
-        const groundHeight = 80; // Altura visual de la imagen del pasto
         let player = { 
             x: canvas.width/2 - 20, 
-            y: canvas.height - groundHeight - 20, // Empieza arriba del pasto
-            width: 40, height: 40, speed: 5 
+            y: canvas.height - 100, 
+            width: 45, height: 45, speed: 5 
         };
         
         let bullets = [], enemies = [], enemyBullets = [], score = 0, gameOver = false;
@@ -73,10 +74,16 @@
         joystick.on('move', (e, data) => { if(data.vector) { moveDir.x = data.vector.x; moveDir.y = -data.vector.y; }});
         joystick.on('end', () => { moveDir = { x: 0, y: 0 }; });
 
-        function shoot() { if(!gameOver) bullets.push({ x: player.x + 16, y: player.y, width: 8, height: 20, speed: 10 }); }
+        function shoot() { if(!gameOver) bullets.push({ x: player.x + player.width/2 - 4, y: player.y, width: 8, height: 20, speed: 10 }); }
+        
         function spawnEnemy() {
             if(gameOver) return;
-            enemies.push({ x: Math.random()*(canvas.width-40), y: -50, width: 40, height: 40, speed: 2, dir: 1 });
+            enemies.push({ 
+                x: Math.random()*(canvas.width-40), 
+                y: -50, width: 40, height: 40, 
+                speed: 1.5 + (score * 0.05), // Dificultad progresiva
+                dir: Math.random() > 0.5 ? 1 : -1 
+            });
         }
 
         function update() {
@@ -85,20 +92,21 @@
             player.x += moveDir.x * player.speed;
             player.y += moveDir.y * player.speed;
 
-            // --- LÍMITES PARA QUE NO SE META AL PASTO ---
+            // Límites de pantalla
             player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-            // El límite inferior es la altura del canvas menos la altura de la imagen del suelo
-            player.y = Math.max(0, Math.min(canvas.height - groundHeight - player.height + 20, player.y));
+            player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
 
             bullets.forEach(b => b.y -= b.speed);
             enemyBullets.forEach(eb => eb.y += eb.speed);
+            
             enemies.forEach(e => {
-                e.y += 0.8; e.x += e.speed * e.dir;
+                e.y += 0.7; 
+                e.x += e.speed * e.dir;
                 if(e.x <= 0 || e.x >= canvas.width - e.width) e.dir *= -1;
-                if(Math.random() < 0.01) enemyBullets.push({x: e.x + 15, y: e.y + 40, width: 6, height: 12, speed: 5});
+                if(Math.random() < 0.012) enemyBullets.push({x: e.x + 15, y: e.y + 40, width: 6, height: 12, speed: 5});
             });
 
-            // Colisiones (Balas vs Enemigos)
+            // Colisiones
             bullets.forEach((b, bi) => {
                 enemies.forEach((e, ei) => {
                     if(b.x < e.x + e.width && b.x + b.width > e.x && b.y < e.y + e.height && b.y + b.height > e.y) {
@@ -108,7 +116,6 @@
                 });
             });
 
-            // Colisiones (Balas Enemigas vs Jugador)
             enemyBullets.forEach((eb) => {
                 if(eb.x < player.x + player.width && eb.x + eb.width > player.x && eb.y < player.y + player.height && eb.y + eb.height > player.y) {
                     gameOver = true;
@@ -116,24 +123,32 @@
                     location.reload();
                 }
             });
+
+            // Limpieza
+            bullets = bullets.filter(b => b.y > -20);
+            enemyBullets = enemyBullets.filter(eb => eb.y < canvas.height + 20);
+            enemies = enemies.filter(e => e.y < canvas.height + 50);
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. Dibujar el Suelo al FINAL de la lógica de capas (Atrás de todo)
-            // Lo dibujamos como una franja en la parte de abajo
+            // 1. DIBUJAR EL PASTO EN TODA LA PANTALLA
             if(imgSuelo.complete) {
-                ctx.drawImage(imgSuelo, 0, canvas.height - groundHeight, canvas.width, groundHeight);
+                // Creamos un patrón para que la imagen se repita y cubra todo el canvas
+                const pattern = ctx.createPattern(imgSuelo, 'repeat');
+                ctx.fillStyle = pattern;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = "#1d3511";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // 2. Dibujar proyectiles
+            // 2. Capa de Disparos
             ctx.fillStyle = "#00ffcc";
             bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
             ctx.fillStyle = "#ff00aa";
             enemyBullets.forEach(eb => ctx.fillRect(eb.x, eb.y, eb.width, eb.height));
 
-            // 3. Dibujar personajes (Aparecerán SOBRE el pasto)
+            // 3. Capa de Personajes
             enemies.forEach(e => ctx.drawImage(imgE, e.x, e.y, e.width, e.height));
             ctx.drawImage(imgP, player.x, player.y, player.width, player.height);
             
@@ -141,7 +156,7 @@
         }
 
         document.getElementById("shootBtn").addEventListener("click", shoot);
-        setInterval(spawnEnemy, 2000);
+        setInterval(spawnEnemy, 1800);
         
         function gameLoop() {
             update();
