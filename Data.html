@@ -4,71 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neon Evasion - Anime Offis Defense</title>
-
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
     <style>
-        :root {
-            --primary: #00aaff;
-            --secondary: #ff00aa;
-            --bg: #050505;
-            --glass: rgba(255, 255, 255, 0.05);
-            --border-glass: rgba(0, 170, 255, 0.3);
-        }
-
-        body {
-            margin: 0; background: var(--bg); color: white;
-            font-family: 'Segoe UI', sans-serif; overflow: hidden;
-            touch-action: none; display: flex; justify-content: center; align-items: center; height: 100vh;
-        }
-
-        #ui-layer {
-            position: absolute; top: 10px; left: 10px; right: 10px; padding: 10px;
-            background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--border-glass);
-            border-radius: 10px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10;
-        }
-
-        canvas { display: block; max-width: 100%; max-height: 100%; background: radial-gradient(circle, #111 0%, #000 100%); }
-
-        .msg-screen {
-            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: rgba(0, 0, 0, 0.85); text-align: center; z-index: 20;
-        }
-
-        .modal-content {
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            display: flex; flex-direction: column; align-items: center; width: 90%; max-width: 400px;
-        }
-
+        :root { --primary: #00aaff; --secondary: #ff00aa; --bg: #050505; --glass: rgba(255, 255, 255, 0.05); }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #ui-layer { position: absolute; top: 10px; left: 10px; right: 10px; padding: 10px; background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(0, 170, 255, 0.3); border-radius: 10px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; }
+        canvas { display: block; background: radial-gradient(circle, #111 0%, #000 100%); }
+        .msg-screen { position: absolute; width: 100%; height: 100%; top: 0; left: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0, 0, 0, 0.85); text-align: center; z-index: 20; }
+        .modal-content { animation: popIn 0.4s ease forwards; display: flex; flex-direction: column; align-items: center; width: 90%; max-width: 400px; }
         @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-        .glass-input {
-            background: rgba(0, 170, 255, 0.1); border: 1px solid var(--primary);
-            color: white; padding: 12px; border-radius: 8px; text-align: center;
-            text-transform: uppercase; margin: 15px 0; width: 80%; outline: none;
-        }
-
-        .game-btn {
-            padding: 12px 24px; font-weight: bold; text-transform: uppercase;
-            color: white; background: rgba(255, 0, 170, 0.1); border: 2px solid var(--secondary);
-            border-radius: 30px; cursor: pointer; transition: 0.3s; margin: 5px; text-decoration: none;
-        }
-
+        .glass-input { background: rgba(0, 170, 255, 0.1); border: 1px solid var(--primary); color: white; padding: 12px; border-radius: 8px; text-align: center; text-transform: uppercase; margin: 15px 0; width: 80%; outline: none; }
+        .game-btn { padding: 12px 24px; font-weight: bold; text-transform: uppercase; color: white; background: rgba(255, 0, 170, 0.1); border: 2px solid var(--secondary); border-radius: 30px; cursor: pointer; transition: 0.3s; margin: 5px; text-decoration: none; }
         .game-btn:hover { background: var(--secondary); box-shadow: 0 0 20px var(--secondary); }
         .btn-gold { border-color: #ffd700; color: #ffd700; }
-
         #powerup-status { color: #00ffaa; font-size: 0.8rem; font-weight: bold; margin-top: 5px; }
         #saving-status { font-size: 0.75rem; color: var(--primary); margin-top: 15px; height: 20px; }
-        .pixel-icon { width: 6rem; height: 6rem; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
         <div>
-            <div style="color: var(--primary); font-size: 0.7rem;">Protocolo // STYCEHT-01</div>
+            <div style="color: var(--primary); font-size: 0.7rem;">SISTEMA STYCEHT // ESCUDOS: <span id="shield-count">0</span></div>
             <div id="powerup-status"></div>
         </div>
         <div id="score" style="font-size: 1.2rem; font-weight: bold; text-shadow: 0 0 10px var(--secondary);">DATOS: 0</div>
@@ -76,9 +34,9 @@
 
     <div id="start-msg" class="msg-screen">
         <div class="modal-content">
-            <h1 style="color: var(--secondary); font-size: 2rem; margin-bottom: 5px;">Anime Offis</h1>
-            <p style="color: var(--primary); font-size: 0.7rem;">Protocolo de Defensa Styceht</p>
-            <input type="text" id="player-name" class="glass-input" placeholder="INGRESA TU NOMBRE" maxlength="15">
+            <h1 style="color: var(--secondary); font-size: 2rem;">Anime Offis</h1>
+            <p style="color: var(--primary); font-size: 0.7rem;">Velocidad Máxima // Escudos acumulables</p>
+            <input type="text" id="player-name" class="glass-input" placeholder="NOMBRE DE AGENTE" maxlength="15">
             <div style="display: flex; gap: 10px;">
                 <button class="game-btn" onclick="startGame()">INICIAR</button>
                 <button class="game-btn btn-gold" onclick="window.location.href='tabla.html'">👑</button>
@@ -88,13 +46,11 @@
 
     <div id="gameover-screen" class="msg-screen" style="display: none;">
         <div class="modal-content">
-            <img src="https://i.ibb.co/x8tsM7XV/WA-1777005834615.png" class="pixel-icon">
-            <h1 style="color: var(--secondary);">CONEXIÓN PERDIDA</h1>
+            <h1 style="color: var(--secondary);">SISTEMA CAÍDO</h1>
             <p id="final-stats" style="color: #ccc;"></p>
             <div style="display: flex; flex-wrap: wrap; justify-content: center;">
                 <button class="game-btn" onclick="startGame()">REINTENTAR</button>
                 <button class="game-btn btn-gold" onclick="window.location.href='tabla.html'">👑</button>
-                <a href="index.html" class="game-btn" style="background: #333; border-color: #555;">MENÚ</a>
             </div>
             <div id="saving-status"></div>
         </div>
@@ -115,28 +71,17 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Manejo de Identidad
-        let userid = localStorage.getItem('animeOffisuserid');
-        if (!userid) {
-            userid = 'agente_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('animeOffisuserid', userid);
-        }
+        let userid = localStorage.getItem('animeOffisuserid') || 'agente_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('animeOffisuserid', userid);
         
-        const nameInput = document.getElementById('player-name');
-        if (localStorage.getItem('animeOffisPlayerName')) {
-            nameInput.value = localStorage.getItem('animeOffisPlayerName');
-        }
-
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
-        const startMsg = document.getElementById('start-msg');
-        const gameOverScreen = document.getElementById('gameover-screen');
-        const savingStatus = document.getElementById('saving-status');
+        const shieldCounter = document.getElementById('shield-count');
         const powerupStatus = document.getElementById('powerup-status');
 
         let score = 0, gameActive = false, enemies = [], powerups = [], playerPos = { x: 0, y: 0 };
-        let hasShield = false, timeScale = 1, slowTimer = null;
+        let shields = 0, timeScale = 1, slowTimer = null;
 
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize); resize();
@@ -150,64 +95,104 @@
         window.addEventListener('touchmove', handleInput, { passive: false });
 
         function startGame() {
-            const name = nameInput.value.trim() || "Agente Anónimo";
+            const name = document.getElementById('player-name').value.trim() || "Agente Anónimo";
             localStorage.setItem('animeOffisPlayerName', name);
-            
             score = 0; enemies = []; powerups = []; gameActive = true;
-            hasShield = false; timeScale = 1;
+            shields = 0; timeScale = 1;
             playerPos = { x: canvas.width/2, y: canvas.height/2 };
-            
-            startMsg.style.display = 'none';
-            gameOverScreen.style.display = 'none';
+            document.getElementById('start-msg').style.display = 'none';
+            document.getElementById('gameover-screen').style.display = 'none';
             scoreElement.innerText = "DATOS: 0";
+            shieldCounter.innerText = "0";
             powerupStatus.innerText = "";
             animate();
         }
 
         class Enemy {
             constructor() {
-                this.size = Math.random() * 10 + 8;
-                this.x = canvas.width + 20;
+                this.size = Math.random() * 8 + 10;
+                this.x = canvas.width + 50;
                 this.y = Math.random() * canvas.height;
-                this.speed = (Math.random() * 3 + 3) + (score / 500);
+                this.speed = (Math.random() * 5 + 6) + (score / 300); // MÁS VELOZ
             }
             update() {
                 this.x -= this.speed * timeScale;
                 ctx.fillStyle = '#00aaff';
-                ctx.shadowBlur = 15; ctx.shadowColor = '#00aaff';
+                ctx.shadowBlur = 10; ctx.shadowColor = '#00aaff';
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class PowerUp {
+            constructor() {
+                this.type = Math.random() < 0.7 ? 'shield' : 'slow'; // Verde o Amarillo
+                this.size = 12;
+                this.x = canvas.width + 50;
+                this.y = Math.random() * canvas.height;
+                this.speed = 4;
+            }
+            update() {
+                this.x -= this.speed * timeScale;
+                ctx.fillStyle = this.type === 'shield' ? '#00ffaa' : '#ffff00';
+                ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+                ctx.beginPath(); 
+                ctx.moveTo(this.x, this.y - this.size);
+                ctx.lineTo(this.x + this.size, this.y);
+                ctx.lineTo(this.x, this.y + this.size);
+                ctx.lineTo(this.x - this.size, this.y);
+                ctx.closePath(); ctx.fill();
                 ctx.shadowBlur = 0;
             }
         }
 
         function animate() {
             if (!gameActive) return;
-            ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.25)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Jugador
-            ctx.shadowBlur = hasShield ? 30 : 20;
-            ctx.shadowColor = hasShield ? '#00ffaa' : '#ff00aa';
+            // Jugador y Escudos Visuales
+            ctx.shadowBlur = 20; ctx.shadowColor = '#ff00aa';
             ctx.fillStyle = '#ff00aa';
             ctx.beginPath(); ctx.arc(playerPos.x, playerPos.y, 12, 0, Math.PI*2); ctx.fill();
-            if(hasShield) {
-                ctx.strokeStyle = '#00ffaa'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.arc(playerPos.x, playerPos.y, 22, 0, Math.PI*2); ctx.stroke();
+            
+            // Dibujar escudos acumulados como órbitas
+            for(let i = 0; i < shields; i++) {
+                ctx.strokeStyle = '#00ffaa';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(playerPos.x, playerPos.y, 20 + (i * 5), 0, Math.PI*2); ctx.stroke();
             }
-            ctx.shadowBlur = 0;
 
-            if (Math.random() < 0.06) enemies.push(new Enemy());
+            // Spawn de Glitches (Enemigos) - FRECUENCIA ALTA
+            if (Math.random() < 0.08) enemies.push(new Enemy());
+            // Spawn de Powerups - BAJA POSIBILIDAD
+            if (Math.random() < 0.004) powerups.push(new PowerUp());
+
+            powerups.forEach((pu, i) => {
+                pu.update();
+                if (Math.hypot(playerPos.x - pu.x, playerPos.y - pu.y) < 25) {
+                    if (pu.type === 'shield') {
+                        if (shields < 4) { shields++; shieldCounter.innerText = shields; powerupStatus.innerText = "ESCUDO ADQUIRIDO"; }
+                    } else {
+                        timeScale = 0.5; powerupStatus.innerText = "TIEMPO LENTO";
+                        clearTimeout(slowTimer);
+                        slowTimer = setTimeout(() => { timeScale = 1; powerupStatus.innerText = ""; }, 4000);
+                    }
+                    powerups.splice(i, 1);
+                }
+            });
 
             enemies.forEach((en, i) => {
                 en.update();
                 const dist = Math.hypot(playerPos.x - en.x, playerPos.y - en.y);
                 if (dist < en.size + 12) {
-                    if (hasShield) {
-                        hasShield = false; enemies.splice(i, 1);
-                        powerupStatus.innerText = "ESCUDO AGOTADO";
+                    if (shields > 0) {
+                        shields--; shieldCounter.innerText = shields; enemies.splice(i, 1);
+                        powerupStatus.innerText = "ESCUDO DAÑADO";
+                        setTimeout(() => { if(gameActive) powerupStatus.innerText = ""; }, 1000);
                     } else { gameOver(); }
                 }
-                if (en.x < -20) { enemies.splice(i, 1); score += 10; scoreElement.innerText = `DATOS: ${score}`; }
+                if (en.x < -30) { enemies.splice(i, 1); score += 10; scoreElement.innerText = `DATOS: ${score}`; }
             });
 
             requestAnimationFrame(animate);
@@ -215,29 +200,21 @@
 
         function gameOver() {
             gameActive = false;
-            gameOverScreen.style.display = 'flex';
+            document.getElementById('gameover-screen').style.display = 'flex';
             document.getElementById('final-stats').innerText = `DATOS RECUPERADOS: ${score}`;
             
             const currentUID = localStorage.getItem('animeOffisuserid');
             const currentName = localStorage.getItem('animeOffisPlayerName');
+            const status = document.getElementById('saving-status');
 
             if (score > 0 && currentUID) {
-                savingStatus.innerText = "Sincronizando con Anime Offis DB...";
+                status.innerText = "Guardando récord...";
                 const ref = db.collection("juegosor").doc(currentUID);
-
                 ref.get().then(doc => {
                     if (!doc.exists || score > (doc.data().score || 0)) {
-                        return ref.set({
-                            username: currentName,
-                            score: score,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
+                        return ref.set({ username: currentName, score: score, timestamp: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
                     }
-                }).then(() => {
-                    savingStatus.innerText = "¡Puntaje Sincronizado!";
-                }).catch(() => {
-                    savingStatus.innerText = "Error de conexión.";
-                });
+                }).then(() => status.innerText = "¡Récord Sincronizado!").catch(() => status.innerText = "Error DB");
             }
         }
     </script>
