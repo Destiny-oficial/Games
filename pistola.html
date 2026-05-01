@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego Pro - Anime Offis</title>
+    <title>Anime Offis - Shooter Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00aaff;
             --accent: #ff00aa;
+            --bg: #050510;
         }
         body { 
             text-align: center; 
-            background-color: #050510; 
+            background-color: var(--bg); 
             color: white; 
             overflow: hidden; 
             font-family: 'Inter', sans-serif; 
@@ -19,40 +21,52 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            height: 100vh;
         }
         #ui-layer {
             width: 100%;
             max-width: 800px;
             display: flex;
             justify-content: space-between;
-            padding: 15px;
+            align-items: center;
+            padding: 10px 20px;
             box-sizing: border-box;
-            z-index: 10;
+            position: absolute;
+            top: 0;
         }
         #score { 
-            font-size: 24px; 
+            font-size: clamp(18px, 4vw, 24px); 
             color: var(--primary); 
             font-family: 'Orbitron', sans-serif;
             text-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
         }
+        .brand-label {
+            font-family: 'Orbitron';
+            color: var(--accent);
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
         canvas { 
             display: block; 
             background: radial-gradient(circle at center, #1a1a3a, #050510);
-            border: 2px solid var(--glass-border);
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             max-width: 95vw;
+            max-height: 70vh;
         }
         /* Controles */
         #joystick { 
             position: fixed; 
             bottom: 40px; 
-            left: 50px; 
+            left: 10%; 
+            z-index: 20;
         }
         #shootBtn { 
             position: fixed; 
             bottom: 40px; 
-            right: 50px; 
+            right: 10%; 
             background: linear-gradient(135deg, var(--accent), #8e54ff); 
             border: none; 
             border-radius: 50%; 
@@ -67,12 +81,15 @@
             align-items: center;
             justify-content: center;
             z-index: 20;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        #shootBtn:active { transform: scale(0.9); }
+        #shootBtn:active { transform: scale(0.9) translateY(5px); }
 
+        /* Ajuste para móviles */
         @media (max-width: 600px) {
-            #joystick { left: 50%; transform: translateX(-110%); bottom: 100px; }
-            #shootBtn { right: 20px; bottom: 20px; width: 70px; height: 70px; }
+            #joystick { left: 50px; bottom: 120px; }
+            #shootBtn { right: 30px; bottom: 30px; width: 75px; height: 75px; }
         }
     </style>
     <script src="https://unpkg.com/nipplejs@0.8.6/dist/nipplejs.js"></script>
@@ -80,7 +97,7 @@
 <body>
     <div id="ui-layer">
         <div id="score">PUNTAJE: 0</div>
-        <div style="color: var(--accent); font-weight: bold;">ANIME OFFIS AF</div>
+        <div class="brand-label">ANIME OFFIS AF</div>
     </div>
     
     <canvas id="gameCanvas"></canvas>
@@ -92,27 +109,30 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Ajuste dinámico de resolución
+        // Ajuste de resolución dinámica
         function resize() {
-            canvas.width = Math.min(window.innerWidth * 0.9, 800);
-            canvas.height = Math.min(window.innerHeight * 0.6, 500);
+            canvas.width = Math.min(window.innerWidth * 0.95, 800);
+            canvas.height = Math.min(window.innerHeight * 0.65, 500);
         }
         window.addEventListener('resize', resize);
         resize();
 
-        let player = { x: canvas.width/2, y: canvas.height - 80, width: 40, height: 40, speed: 5 };
+        // Configuración inicial
+        let player = { x: canvas.width/2 - 20, y: canvas.height - 85, width: 40, height: 40, speed: 5 };
         let bullets = [], enemies = [], enemyBullets = [], score = 0, gameOver = false;
 
+        // Imágenes
         const imgP = new Image(); imgP.src = 'player.png';
         const imgE = new Image(); imgE.src = 'enemy.png';
         const imgG = new Image(); imgG.src = 'suelo.png';
 
+        // Joystick
         const joystick = nipplejs.create({
             zone: document.getElementById('joystick'),
             mode: 'static',
             position: { left: '50px', bottom: '120px' },
             color: '#00aaff',
-            size: 130
+            size: 120
         });
 
         let moveDir = { x: 0, y: 0 };
@@ -120,84 +140,132 @@
         joystick.on('end', () => { moveDir = { x: 0, y: 0 }; });
 
         function shoot() {
-            if(!gameOver) bullets.push({ x: player.x + player.width/2 - 4, y: player.y, width: 8, height: 20, speed: 8 });
+            if(!gameOver) {
+                bullets.push({ 
+                    x: player.x + player.width/2 - 4, 
+                    y: player.y, 
+                    width: 8, 
+                    height: 20, 
+                    speed: 10 
+                });
+            }
         }
 
         function spawnEnemy() {
             if(gameOver) return;
-            enemies.push({ x: Math.random()*(canvas.width-40), y: -40, width: 40, height: 40, speed: 2, dir: 1 });
+            enemies.push({ 
+                x: Math.random() * (canvas.width - 40), 
+                y: -50, 
+                width: 40, 
+                height: 40, 
+                speed: 2, 
+                dir: Math.random() > 0.5 ? 1 : -1 
+            });
+        }
+
+        function checkCollisions() {
+            // Jugador vs Balas Enemigas
+            enemyBullets.forEach((eb) => {
+                if(eb.x < player.x + player.width && eb.x + eb.width > player.x &&
+                   eb.y < player.y + player.height && eb.y + eb.height > player.y) {
+                    gameOver = true;
+                    alert("¡GAME OVER! Tu puntaje: " + score);
+                    location.reload();
+                }
+            });
+
+            // Enemigos vs Balas Jugador
+            bullets.forEach((b, bi) => {
+                enemies.forEach((e, ei) => {
+                    if(b.x < e.x + e.width && b.x + b.width > e.x &&
+                       b.y < e.y + e.height && b.y + b.height > e.y) {
+                        bullets.splice(bi, 1);
+                        enemies.splice(ei, 1);
+                        score++;
+                        document.getElementById("score").innerText = "PUNTAJE: " + score;
+                    }
+                });
+            });
         }
 
         function update() {
             if(gameOver) return;
 
+            // Movimiento
             player.x += moveDir.x * player.speed;
             player.y += moveDir.y * player.speed;
+
+            // Límites (No salirse del área ni hundirse en el pasto)
             player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-            player.y = Math.max(0, Math.min(canvas.height - player.height - 40, player.y));
+            player.y = Math.max(0, Math.min(canvas.height - player.height - 20, player.y));
 
             bullets.forEach(b => b.y -= b.speed);
-            enemyBullets.forEach(b => b.y += b.speed);
+            enemyBullets.forEach(eb => eb.y += eb.speed);
             
             enemies.forEach(e => {
-                e.y += 0.5; // Los enemigos bajan lento
+                e.y += 0.8; 
                 e.x += e.speed * e.dir;
                 if(e.x <= 0 || e.x >= canvas.width - e.width) e.dir *= -1;
-                if(Math.random() < 0.015) enemyBullets.push({x: e.x+15, y: e.y+40, width: 6, height: 12, speed: 4});
-            });
-
-            // Colisiones
-            bullets.forEach((b, bi) => {
-                enemies.forEach((e, ei) => {
-                    if(b.x < e.x+e.width && b.x+b.width > e.x && b.y < e.y+e.height && b.y+b.height > e.y) {
-                        bullets.splice(bi, 1); enemies.splice(ei, 1);
-                        score++; document.getElementById("score").innerText = "PUNTAJE: " + score;
-                    }
-                });
-            });
-
-            enemyBullets.forEach(b => {
-                if(b.x < player.x+player.width && b.x+b.width > player.x && b.y < player.y+player.height && b.y+b.height > player.y) {
-                    gameOver = true;
-                    alert("GAME OVER - Puntaje: " + score);
-                    location.reload();
+                if(Math.random() < 0.01) {
+                    enemyBullets.push({x: e.x + 15, y: e.y + 40, width: 6, height: 12, speed: 5});
                 }
             });
+
+            // Limpiar proyectiles fuera de pantalla
+            bullets = bullets.filter(b => b.y > -20);
+            enemyBullets = enemyBullets.filter(eb => eb.y < canvas.height + 20);
+            enemies = enemies.filter(e => e.y < canvas.height + 50);
+
+            checkCollisions();
         }
 
         function draw() {
+            // 1. Fondo limpio
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Suelo que siempre cubre el ancho del canvas
+            // 2. CAPA FONDO: El Suelo (Dibujado primero)
+            const groundH = 60;
             if(imgG.complete) {
-                ctx.drawImage(imgG, 0, canvas.height - 50, canvas.width, 50);
+                ctx.drawImage(imgG, 0, canvas.height - groundH, canvas.width, groundH);
             } else {
-                ctx.fillStyle = "#004400";
+                ctx.fillStyle = "#1d3511";
                 ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
             }
 
-            ctx.drawImage(imgP, player.x, player.y, player.width, player.height);
-            
+            // 3. CAPA MEDIA: Proyectiles
             ctx.fillStyle = "#00ffcc";
-            bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+            bullets.forEach(b => {
+                ctx.shadowBlur = 10; ctx.shadowColor = "#00ffcc";
+                ctx.fillRect(b.x, b.y, b.width, b.height);
+                ctx.shadowBlur = 0;
+            });
 
             ctx.fillStyle = "#ff00aa";
-            enemyBullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+            enemyBullets.forEach(eb => {
+                ctx.shadowBlur = 10; ctx.shadowColor = "#ff00aa";
+                ctx.fillRect(eb.x, eb.y, eb.width, eb.height);
+                ctx.shadowBlur = 0;
+            });
 
+            // 4. CAPA SUPERIOR: Personajes (Para que pisen el pasto)
             enemies.forEach(e => ctx.drawImage(imgE, e.x, e.y, e.width, e.height));
+            ctx.drawImage(imgP, player.x, player.y, player.width, player.height);
             
             if(!gameOver) requestAnimationFrame(draw);
         }
 
+        // Eventos y Loops
+        document.getElementById("shootBtn").addEventListener("touchstart", (e) => { e.preventDefault(); shoot(); });
         document.getElementById("shootBtn").addEventListener("click", shoot);
-        setInterval(spawnEnemy, 2000);
         
-        function loop() {
+        setInterval(spawnEnemy, 2000);
+
+        function gameLoop() {
             update();
-            setTimeout(() => { if(!gameOver) loop(); }, 1000/60);
+            setTimeout(() => { if(!gameOver) gameLoop(); }, 1000/60);
         }
         
-        loop();
+        gameLoop();
         draw();
     </script>
 </body>
