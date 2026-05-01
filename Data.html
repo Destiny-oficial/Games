@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Evasion - Anime Offis Server Defense</title>
-    
+    <title>Neon Evasion - Anime Offis Defense</title>
+
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
@@ -15,191 +15,53 @@
             --bg: #050505;
             --glass: rgba(255, 255, 255, 0.05);
             --border-glass: rgba(0, 170, 255, 0.3);
-            --gold: #ffd700;
         }
 
         body {
-            margin: 0;
-            background: var(--bg);
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-            overflow: hidden;
-            touch-action: none; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            margin: 0; background: var(--bg); color: white;
+            font-family: 'Segoe UI', sans-serif; overflow: hidden;
+            touch-action: none; display: flex; justify-content: center; align-items: center; height: 100vh;
         }
 
         #ui-layer {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            padding: 10px;
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-glass);
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-            z-index: 10;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            position: absolute; top: 10px; left: 10px; right: 10px; padding: 10px;
+            background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--border-glass);
+            border-radius: 10px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10;
         }
 
-        canvas {
-            display: block;
-            max-width: 100%;
-            max-height: 100%;
-            background: radial-gradient(circle, #111 0%, #000 100%);
-        }
-
-        @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
+        canvas { display: block; max-width: 100%; max-height: 100%; background: radial-gradient(circle, #111 0%, #000 100%); }
 
         .msg-screen {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.85); 
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            z-index: 10;
-            pointer-events: auto; 
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0, 0, 0, 0.85); text-align: center; z-index: 20;
         }
 
         .modal-content {
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 90%;
-            max-width: 400px;
+            display: flex; flex-direction: column; align-items: center; width: 90%; max-width: 400px;
         }
 
-        #gameover-screen {
-            display: none; 
-        }
-
-        .pixel-icon {
-            image-rendering: pixelated; 
-            width: 6rem; 
-            height: 6rem;
-            margin-bottom: 15px;
-        }
-
-        #motivational-text {
-            color: #ccc;
-            font-size: 0.9rem;
-            max-width: 80%;
-            margin-bottom: 20px;
-            text-transform: none; 
-            letter-spacing: normal;
-        }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
         .glass-input {
-            background: rgba(0, 170, 255, 0.1);
-            border: 1px solid var(--primary);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            text-align: center;
-            font-family: 'Segoe UI', sans-serif;
-            text-transform: uppercase;
-            margin: 15px 0;
-            outline: none;
-            box-shadow: 0 0 10px rgba(0, 170, 255, 0.2);
-            width: 80%;
-            max-width: 250px;
-            transition: all 0.3s ease;
-        }
-
-        .glass-input:focus {
-            box-shadow: 0 0 20px rgba(0, 170, 255, 0.6);
-            background: rgba(0, 170, 255, 0.2);
-        }
-
-        .glass-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            background: rgba(0, 170, 255, 0.1); border: 1px solid var(--primary);
+            color: white; padding: 12px; border-radius: 8px; text-align: center;
+            text-transform: uppercase; margin: 15px 0; width: 80%; outline: none;
         }
 
         .game-btn {
-            padding: 12px 24px;
-            font-size: 1rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            color: white;
-            background: rgba(255, 0, 170, 0.1);
-            border: 2px solid var(--secondary);
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(255, 0, 170, 0.3);
-            text-decoration: none;
-            display: inline-block;
-            pointer-events: auto !important; 
-            position: relative;
-            margin: 5px;
+            padding: 12px 24px; font-weight: bold; text-transform: uppercase;
+            color: white; background: rgba(255, 0, 170, 0.1); border: 2px solid var(--secondary);
+            border-radius: 30px; cursor: pointer; transition: 0.3s; margin: 5px; text-decoration: none;
         }
 
-        .game-btn:hover {
-            background: var(--secondary);
-            box-shadow: 0 0 20px rgba(255, 0, 170, 0.6);
-            transform: translateY(-2px);
-        }
+        .game-btn:hover { background: var(--secondary); box-shadow: 0 0 20px var(--secondary); }
+        .btn-gold { border-color: #ffd700; color: #ffd700; }
 
-        /* Estilo especial para el botón de ranking */
-        .btn-gold {
-            border-color: var(--gold);
-            color: var(--gold);
-            background: rgba(255, 215, 0, 0.05);
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
-        }
-
-        .btn-gold:hover {
-            background: rgba(255, 215, 0, 0.2);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-        }
-
-        .btn-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .lore-text {
-            color: var(--primary);
-            font-size: 0.7rem;
-            letter-spacing: 1px;
-            margin-top: -10px;
-            margin-bottom: 5px;
-        }
-        
-        #powerup-status {
-            color: #00ffaa;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-top: 5px;
-            text-shadow: 0 0 5px #00ffaa;
-        }
-
-        #saving-status {
-            font-size: 0.7rem;
-            color: var(--primary);
-            margin-top: 15px;
-            height: 15px;
-        }
+        #powerup-status { color: #00ffaa; font-size: 0.8rem; font-weight: bold; margin-top: 5px; }
+        #saving-status { font-size: 0.75rem; color: var(--primary); margin-top: 15px; height: 20px; }
+        .pixel-icon { width: 6rem; height: 6rem; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -214,32 +76,26 @@
 
     <div id="start-msg" class="msg-screen">
         <div class="modal-content">
-            <h1 style="color: var(--secondary); font-size: 2rem; margin-bottom: 5px; text-shadow: 0 0 15px var(--secondary);">Anime Offis</h1>
-            <p class="lore-text">Protocolo de Defensa Styceht en Anime Offis</p>
-            <p style="font-size: 0.8rem; color: #aaa;">Esquiva los Glitches (Azul)</p>
-            <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 0;">Recoge Power-Ups <br>Verde: Escudo / Amarillo: Cámara Lenta</p>
-            
-            <input type="text" id="player-name" class="glass-input" placeholder="INGRESA TU NOMBRE" autocomplete="off" maxlength="15">
-            
-            <div class="btn-container">
-                <button class="game-btn" onclick="startGame(event)">INICIAR SISTEMA</button>
+            <h1 style="color: var(--secondary); font-size: 2rem; margin-bottom: 5px;">Anime Offis</h1>
+            <p style="color: var(--primary); font-size: 0.7rem;">Protocolo de Defensa Styceht</p>
+            <input type="text" id="player-name" class="glass-input" placeholder="INGRESA TU NOMBRE" maxlength="15">
+            <div style="display: flex; gap: 10px;">
+                <button class="game-btn" onclick="startGame()">INICIAR</button>
                 <button class="game-btn btn-gold" onclick="window.location.href='tabla.html'">👑</button>
             </div>
         </div>
     </div>
 
-    <div id="gameover-screen" class="msg-screen">
+    <div id="gameover-screen" class="msg-screen" style="display: none;">
         <div class="modal-content">
-            <img src="https://i.ibb.co/x8tsM7XV/WA-1777005834615.png" alt="Pixel Icon" class="pixel-icon">
-            <h1 style="color: #ff00aa; font-size: 2rem; margin: 0; text-shadow: 0 0 15px #ff00aa;">CONEXIÓN PERDIDA</h1>
-            <p id="motivational-text">"La persistencia es la clave del éxito."</p>
-            
-            <div class="btn-container">
-                <a href="index.html" class="game-btn">Menú</a>
-                <button class="game-btn" onclick="startGame(event)">Reconectar</button>
+            <img src="https://i.ibb.co/x8tsM7XV/WA-1777005834615.png" class="pixel-icon">
+            <h1 style="color: var(--secondary);">CONEXIÓN PERDIDA</h1>
+            <p id="final-stats" style="color: #ccc;"></p>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+                <button class="game-btn" onclick="startGame()">REINTENTAR</button>
                 <button class="game-btn btn-gold" onclick="window.location.href='tabla.html'">👑</button>
+                <a href="index.html" class="game-btn" style="background: #333; border-color: #555;">MENÚ</a>
             </div>
-            
             <div id="saving-status"></div>
         </div>
     </div>
@@ -247,7 +103,6 @@
     <canvas id="gameCanvas"></canvas>
 
     <script>
-        // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAu0WbdAi8_yA2S6qKMUCLfty5w0PxgKVE",
             authDomain: "anime-offis.firebaseapp.com",
@@ -257,223 +112,132 @@
             appId: "1:377121993034:web:a4ba7995e827bcbea411b3"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- GESTIÓN DE USUARIO ---
+        // Manejo de Identidad
         let userid = localStorage.getItem('animeOffisuserid');
-        let savedName = localStorage.getItem('animeOffisPlayerName');
-        const nameInput = document.getElementById('player-name');
-
         if (!userid) {
-            userid = 'user_' + Math.random().toString(36).substr(2, 9);
+            userid = 'agente_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('animeOffisuserid', userid);
         }
         
-        if (savedName) {
-            nameInput.value = savedName; 
+        const nameInput = document.getElementById('player-name');
+        if (localStorage.getItem('animeOffisPlayerName')) {
+            nameInput.value = localStorage.getItem('animeOffisPlayerName');
         }
 
-        // --- REFERENCIAS DOM ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
         const startMsg = document.getElementById('start-msg');
         const gameOverScreen = document.getElementById('gameover-screen');
-        const motivationalText = document.getElementById('motivational-text');
-        const powerupStatus = document.getElementById('powerup-status');
         const savingStatus = document.getElementById('saving-status');
+        const powerupStatus = document.getElementById('powerup-status');
 
-        // --- SISTEMA DE AUDIO (Web Audio API) ---
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx;
-
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
-
-        function playSound(type) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-            
-            if (type === 'score') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'gameover') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
-                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                osc.start(now); osc.stop(now + 0.5);
-            } else if (type === 'powerup') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.setValueAtTime(600, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
-            }
-        }
-
-        const phrases = [
-            "Los servidores de Anime Offis confían en ti.",
-            "Haruto y Styceht necesitan que sigas intentándolo.",
-            "Un glitch no detendrá nuestro servidor.",
-            "La persistencia es la clave del éxito en el código.",
-            "Recarga tus bases de datos y vuelve a la carga."
-        ];
+        let score = 0, gameActive = false, enemies = [], powerups = [], playerPos = { x: 0, y: 0 };
+        let hasShield = false, timeScale = 1, slowTimer = null;
 
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize); resize();
 
-        let score = 0, gameActive = false, enemies = [], powerups = [], particles = [];
-        let playerPos = { x: canvas.width / 2, y: canvas.height / 2 };
-        let hasShield = false, timeScale = 1, slowTimer = null;
-        let playerName = "Agente";
-
         function handleInput(e) {
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.tagName === 'INPUT') return; 
-            e.preventDefault();
-            let clientX, clientY;
-            if (e.type.includes('touch')) {
-                if (e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; } else return;
-            } else { clientX = e.clientX; clientY = e.clientY; }
-            playerPos.x = clientX; playerPos.y = clientY;
+            if (!gameActive) return;
+            const t = e.touches ? e.touches[0] : e;
+            playerPos.x = t.clientX; playerPos.y = t.clientY;
         }
+        window.addEventListener('mousemove', handleInput);
+        window.addEventListener('touchmove', handleInput, { passive: false });
 
-        window.addEventListener('mousedown', handleInput);
-        window.addEventListener('mousemove', (e) => { if(gameActive) handleInput(e); });
-        window.addEventListener('touchstart', handleInput, {passive: false});
-        window.addEventListener('touchmove', handleInput, {passive: false});
-
-        function startGame(e) {
-            if(e) e.preventDefault();
+        function startGame() {
+            const name = nameInput.value.trim() || "Agente Anónimo";
+            localStorage.setItem('animeOffisPlayerName', name);
             
-            playerName = nameInput.value.trim() || "Agente Anónimo";
-            localStorage.setItem('animeOffisPlayerName', playerName);
-
-            initAudio(); 
-            gameActive = true; score = 0; enemies = []; powerups = [];
-            hasShield = false; timeScale = 1; clearTimeout(slowTimer);
-            powerupStatus.innerText = ""; scoreElement.innerText = "DATOS: 0";
-            startMsg.style.display = 'none'; gameOverScreen.style.display = 'none';
-            savingStatus.innerText = "";
+            score = 0; enemies = []; powerups = []; gameActive = true;
+            hasShield = false; timeScale = 1;
+            playerPos = { x: canvas.width/2, y: canvas.height/2 };
             
-            particles = [];
-            for(let i = 0; i < 50; i++) particles.push(new BackgroundParticle());
+            startMsg.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            scoreElement.innerText = "DATOS: 0";
+            powerupStatus.innerText = "";
             animate();
         }
 
-        class BackgroundParticle {
-            constructor() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.size = Math.random() * 2; this.speed = Math.random() * 1 + 0.5; }
-            update() {
-                this.x -= this.speed * timeScale;
-                if(this.x < 0) { this.x = canvas.width; this.y = Math.random() * canvas.height; }
-                ctx.fillStyle = 'rgba(0, 170, 255, 0.3)'; ctx.fillRect(this.x, this.y, this.size, this.size);
-            }
-        }
-
         class Enemy {
-            constructor() { this.size = Math.random() * 10 + 8; this.x = canvas.width + this.size; this.y = Math.random() * canvas.height; this.baseSpeed = Math.random() * 4 + 3 + (score / 200); }
-            update() {
-                this.x -= this.baseSpeed * timeScale;
-                ctx.shadowBlur = 15; ctx.shadowColor = '#00aaff'; ctx.fillStyle = '#00aaff';
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-            }
-        }
-
-        class PowerUp {
             constructor() {
-                this.x = canvas.width + 20; this.y = Math.random() * (canvas.height - 40) + 20; this.size = 10; this.speed = 3;
-                this.type = Math.random() > 0.5 ? 'shield' : 'slow'; 
-                this.color = this.type === 'shield' ? '#00ffaa' : '#ffff00';
+                this.size = Math.random() * 10 + 8;
+                this.x = canvas.width + 20;
+                this.y = Math.random() * canvas.height;
+                this.speed = (Math.random() * 3 + 3) + (score / 500);
             }
             update() {
                 this.x -= this.speed * timeScale;
-                ctx.shadowBlur = 15; ctx.shadowColor = this.color; ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.moveTo(this.x, this.y - this.size); ctx.lineTo(this.x + this.size, this.y); ctx.lineTo(this.x, this.y + this.size); ctx.lineTo(this.x - this.size, this.y); ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
+                ctx.fillStyle = '#00aaff';
+                ctx.shadowBlur = 15; ctx.shadowColor = '#00aaff';
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
             }
         }
 
         function animate() {
             if (!gameActive) return;
-            ctx.fillStyle = 'rgba(5, 5, 5, 0.3)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => p.update());
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.shadowBlur = hasShield ? 30 : 25; ctx.shadowColor = hasShield ? '#00ffaa' : '#ff00aa'; ctx.fillStyle = '#ff00aa';
-            ctx.beginPath(); ctx.arc(playerPos.x, playerPos.y, 12, 0, Math.PI * 2); ctx.fill();
-            
-            if(hasShield) { ctx.strokeStyle = '#00ffaa'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(playerPos.x, playerPos.y, 20, 0, Math.PI * 2); ctx.stroke(); }
+            // Jugador
+            ctx.shadowBlur = hasShield ? 30 : 20;
+            ctx.shadowColor = hasShield ? '#00ffaa' : '#ff00aa';
+            ctx.fillStyle = '#ff00aa';
+            ctx.beginPath(); ctx.arc(playerPos.x, playerPos.y, 12, 0, Math.PI*2); ctx.fill();
+            if(hasShield) {
+                ctx.strokeStyle = '#00ffaa'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(playerPos.x, playerPos.y, 22, 0, Math.PI*2); ctx.stroke();
+            }
             ctx.shadowBlur = 0;
 
-            if (Math.random() < 0.05 * timeScale) enemies.push(new Enemy());
-            if (Math.random() < 0.003 * timeScale) powerups.push(new PowerUp());
+            if (Math.random() < 0.06) enemies.push(new Enemy());
 
-            powerups.forEach((pu, index) => {
-                pu.update();
-                const dx = playerPos.x - pu.x; const dy = playerPos.y - pu.y;
-                if (Math.sqrt(dx * dx + dy * dy) < 12 + pu.size) { activatePowerUp(pu.type); powerups.splice(index, 1); } else if (pu.x < -20) { powerups.splice(index, 1); }
-            });
-
-            enemies.forEach((enemy, index) => {
-                enemy.update();
-                const dx = playerPos.x - enemy.x; const dy = playerPos.y - enemy.y;
-                if (Math.sqrt(dx * dx + dy * dy) < 12 + enemy.size) {
-                    if (hasShield) { hasShield = false; powerupStatus.innerText = "ESCUDO DESTRUIDO"; powerupStatus.style.color = "#ff0000"; playSound('gameover'); enemies.splice(index, 1); setTimeout(() => powerupStatus.innerText = "", 1500); } else { gameOver(); }
+            enemies.forEach((en, i) => {
+                en.update();
+                const dist = Math.hypot(playerPos.x - en.x, playerPos.y - en.y);
+                if (dist < en.size + 12) {
+                    if (hasShield) {
+                        hasShield = false; enemies.splice(i, 1);
+                        powerupStatus.innerText = "ESCUDO AGOTADO";
+                    } else { gameOver(); }
                 }
-                if (enemy.x + enemy.size < 0) { enemies.splice(index, 1); score += 10; scoreElement.innerText = `DATOS: ${score}`; playSound('score'); }
+                if (en.x < -20) { enemies.splice(i, 1); score += 10; scoreElement.innerText = `DATOS: ${score}`; }
             });
-            requestAnimationFrame(animate);
-        }
 
-        function activatePowerUp(type) {
-            playSound('powerup');
-            if (type === 'shield') { hasShield = true; powerupStatus.innerText = "ESCUDO ACTIVO"; powerupStatus.style.color = "#00ffaa"; } else if (type === 'slow') {
-                timeScale = 0.4; powerupStatus.innerText = "SISTEMA LENTO"; powerupStatus.style.color = "#ffff00"; clearTimeout(slowTimer);
-                slowTimer = setTimeout(() => { timeScale = 1; if(!hasShield) powerupStatus.innerText = ""; }, 4000);
-            }
+            requestAnimationFrame(animate);
         }
 
         function gameOver() {
             gameActive = false;
-            playSound('gameover');
             gameOverScreen.style.display = 'flex';
+            document.getElementById('final-stats').innerText = `DATOS RECUPERADOS: ${score}`;
             
-            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-            motivationalText.innerText = `"${randomPhrase}"\n\nDatos recuperados: ${score}`;
+            const currentUID = localStorage.getItem('animeOffisuserid');
+            const currentName = localStorage.getItem('animeOffisPlayerName');
 
-            if (score > 0) {
+            if (score > 0 && currentUID) {
                 savingStatus.innerText = "Sincronizando con Anime Offis DB...";
-                
-                const userRef = db.collection("juegosor").doc(userid);
-                
-                userRef.get().then((doc) => {
-                    if (doc.exists) {
-                        const previousScore = doc.data().score || 0;
-                        if (score > previousScore) {
-                            userRef.update({
-                                username: playerName,
-                                score: score,
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            }).then(() => savingStatus.innerText = "¡Nuevo récord guardado!");
-                        } else {
-                            savingStatus.innerText = `Tu récord sigue siendo ${previousScore}`;
-                        }
-                    } else {
-                        userRef.set({
-                            username: playerName,
+                const ref = db.collection("juegosor").doc(currentUID);
+
+                ref.get().then(doc => {
+                    if (!doc.exists || score > (doc.data().score || 0)) {
+                        return ref.set({
+                            username: currentName,
                             score: score,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        }).then(() => savingStatus.innerText = "Puntuación guardada.");
+                        }, { merge: true });
                     }
-                }).catch((error) => {
-                    console.error("Error al guardar: ", error);
-                    savingStatus.innerText = "Error al sincronizar.";
+                }).then(() => {
+                    savingStatus.innerText = "¡Puntaje Sincronizado!";
+                }).catch(() => {
+                    savingStatus.innerText = "Error de conexión.";
                 });
-            } else {
-                savingStatus.innerText = "";
             }
         }
     </script>
