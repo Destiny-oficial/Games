@@ -2,292 +2,226 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego de Avión</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sky Strike - Anime Offis</title>
     <style>
+        :root { --primary: #00aaff; --accent: #ff00aa; --glass: rgba(255, 255, 255, 0.1); }
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #111;
-            color: #fff;
-            flex-direction: column;
-            position: relative;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; font-family: 'Orbitron', sans-serif;
+            background-color: #050510; color: #fff; flex-direction: column; overflow: hidden;
         }
-
-        #gameContainer {
-            text-align: center;
-            position: relative;
-        }
-
+        #gameContainer { text-align: center; position: relative; width: 100%; max-width: 400px; }
         canvas {
-            border: 2px solid #fff;
-            background-color: #000;
-            width: 200px;
-            height: 400px;
+            border: 2px solid var(--primary); background-color: #000;
+            border-radius: 15px; box-shadow: 0 0 20px rgba(0, 170, 255, 0.3);
+            width: 300px; height: 500px;
         }
-
         #joystick {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            touch-action: none;
+            position: relative; margin: 20px auto; width: 120px; height: 120px;
+            background: var(--glass); border: 2px solid var(--primary); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; touch-action: none;
         }
-
         #joystickHandle {
-            width: 40px;
-            height: 40px;
-            background: #fff;
-            border-radius: 50%;
-            position: absolute;
-            transition: all 0.1s ease;
+            width: 50px; height: 50px; background: var(--primary);
+            border-radius: 50%; position: absolute; box-shadow: 0 0 15px var(--primary);
         }
-
-        #score {
-            font-size: 24px;
-            margin-top: 10px;
+        #score { font-size: 24px; margin: 15px 0; color: var(--primary); text-transform: uppercase; }
+        #startButton {
+            padding: 15px 30px; font-size: 20px; background: var(--accent);
+            color: white; border: none; border-radius: 30px; cursor: pointer;
+            font-family: 'Orbitron'; box-shadow: 0 0 15px var(--accent);
         }
-
         #gameOverScreen {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: rgba(5, 5, 16, 0.95);
+            padding: 30px; border: 2px solid var(--accent); border-radius: 20px;
+            text-align: center; z-index: 100; width: 80%;
         }
-
         .gameOverButton {
-            background-color: #333;
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 5px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        .gameOverButton:active {
-            background-color: #555;
+            background: var(--primary); color: #fff; border: none;
+            padding: 12px 20px; margin: 10px; border-radius: 10px;
+            font-size: 16px; cursor: pointer; font-family: 'Inter';
         }
     </style>
 </head>
 <body>
     <div id="gameContainer">
-        <h1>Juego de Avión</h1>
-        <canvas id="gameCanvas"></canvas>
-        <button id="startButton">Iniciar Juego</button>
         <div id="score">Puntaje: 0</div>
-        <div id="joystick">
-            <div id="joystickHandle"></div>
+        <canvas id="gameCanvas"></canvas>
+        <div style="margin-top: 20px;">
+            <button id="startButton">INICIAR MISIÓN</button>
         </div>
+        
+        <div id="joystick"><div id="joystickHandle"></div></div>
 
         <div id="gameOverScreen">
-            <h2>Perdiste</h2>
+            <h2 style="color: var(--accent);">MISIÓN FALLIDA</h2>
             <p id="finalScore"></p>
-            <button class="gameOverButton" onclick="resetGame()">Reiniciar Juego</button>
-            <button class="gameOverButton" onclick="goToMenu()">Volver al Menú</button>
+            <button class="gameOverButton" onclick="resetGame()">REINTENTAR</button>
+            <button class="gameOverButton" style="background: #444;" onclick="goToMenu()">MENÚ</button>
         </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        canvas.width = 300; canvas.height = 500;
 
-        canvas.width = 200;
-        canvas.height = 400;
+        // Assets
+        const playerImg = new Image(); playerImg.src = 'avion.png';
+        const enemyImg = new Image(); enemyImg.src = 'ene.png';
+        const bulletImg = new Image(); bulletImg.src = 'bala.png';
+        const backgroundImg = new Image(); backgroundImg.src = 'espacio.jpeg';
 
-        const playerImg = new Image();
-        playerImg.src = 'avion.png';
-
-        const enemyImg = new Image();
-        enemyImg.src = 'ene.png';
-
-        const bulletImg = new Image();
-        bulletImg.src = 'bala.png';
-
-        const backgroundImg = new Image();
-        backgroundImg.src = 'espacio.jpeg';
-
-        const player = {
-            x: canvas.width / 2 - 15,
-            y: canvas.height - 40,
-            width: 30,
-            height: 30,
-            speed: 5,
-            projectiles: []
-        };
-
+        let player = { x: 135, y: 430, width: 40, height: 40, speed: 6, projectiles: [] };
         let score = 0;
         let gameRunning = false;
         let bulletsPerShot = 1;
-        const enemies = [];
-        let shootInterval;
+        let enemies = [];
+        let shootTimer = 0;
+        let animationId;
 
         function createEnemy() {
-            const enemy = {
-                x: Math.random() * (canvas.width - 40),
-                y: -40,
-                width: 30,
-                height: 30,
-                speed: 2
-            };
-            enemies.push(enemy);
-        }
-
-        function drawBackground() {
-            ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
-        }
-
-        function drawPlayer() {
-            ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
-        }
-
-        function shootProjectile() {
-            const bulletSpacing = 10;
-            for (let i = 0; i < bulletsPerShot; i++) {
-                const projectile = {
-                    x: player.x + player.width / 2 - 5 + (i - Math.floor(bulletsPerShot / 2)) * bulletSpacing,
-                    y: player.y,
-                    width: 10,
-                    height: 20,
-                    speed: 5
-                };
-                player.projectiles.push(projectile);
+            if (Math.random() < 0.03) {
+                enemies.push({
+                    x: Math.random() * (canvas.width - 35),
+                    y: -40, width: 35, height: 35, speed: 2 + (score / 50)
+                });
             }
         }
 
-        function drawProjectiles() {
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Fondo
+            if (backgroundImg.complete) ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+            else { ctx.fillStyle = '#050510'; ctx.fillRect(0,0, canvas.width, canvas.height); }
+
+            // Jugador
+            ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+
+            // Balas
             player.projectiles.forEach((p, index) => {
                 p.y -= p.speed;
                 ctx.drawImage(bulletImg, p.x, p.y, p.width, p.height);
-                if (p.y < 0) player.projectiles.splice(index, 1);
+                if (p.y < -20) player.projectiles.splice(index, 1);
             });
-        }
 
-        function drawEnemies() {
+            // Enemigos
             enemies.forEach((enemy, index) => {
                 enemy.y += enemy.speed;
                 ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.width, enemy.height);
+                
+                // Colisión con jugador
+                if (player.x < enemy.x + enemy.width && player.x + player.width > enemy.x &&
+                    player.y < enemy.y + enemy.height && player.y + player.height > enemy.y) {
+                    showGameOverScreen();
+                }
+
                 if (enemy.y > canvas.height) enemies.splice(index, 1);
             });
-        }
 
-        function detectCollisions() {
+            // Colisiones Bala - Enemigo
             player.projectiles.forEach((p, pIndex) => {
                 enemies.forEach((enemy, eIndex) => {
-                    if (
-                        p.x < enemy.x + enemy.width &&
-                        p.x + p.width > enemy.x &&
-                        p.y < enemy.y + enemy.height &&
-                        p.y + p.height > enemy.y
-                    ) {
+                    if (p.x < enemy.x + enemy.width && p.x + p.width > enemy.x &&
+                        p.y < enemy.y + enemy.height && p.y + p.height > enemy.y) {
                         player.projectiles.splice(pIndex, 1);
                         enemies.splice(eIndex, 1);
                         score++;
                         document.getElementById('score').innerText = `Puntaje: ${score}`;
-
-                        if (score % 30 === 0) {
-                            bulletsPerShot += 2;
-                        }
+                        if (score > 0 && score % 30 === 0) bulletsPerShot = Math.min(bulletsPerShot + 2, 7);
                     }
                 });
             });
-
-            enemies.forEach((enemy) => {
-                if (
-                    player.x < enemy.x + enemy.width &&
-                    player.x + player.width > enemy.x &&
-                    player.y < enemy.y + enemy.height &&
-                    player.y + player.height > enemy.y
-                ) {
-                    showGameOverScreen();
-                }
-            });
         }
 
-        function updateGame() {
+        function update() {
             if (!gameRunning) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-            drawPlayer();
-            drawProjectiles();
-            drawEnemies();
-            detectCollisions();
-            if (Math.random() < 0.02) createEnemy();
+            
+            // Auto-shoot
+            shootTimer++;
+            if (shootTimer >= 15) {
+                const spacing = 12;
+                for (let i = 0; i < bulletsPerShot; i++) {
+                    player.projectiles.push({
+                        x: (player.x + player.width / 2 - 5) + (i - Math.floor(bulletsPerShot / 2)) * spacing,
+                        y: player.y, width: 10, height: 20, speed: 7
+                    });
+                }
+                shootTimer = 0;
+            }
+
+            createEnemy();
+            draw();
+            animationId = requestAnimationFrame(update);
         }
 
         function startGame() {
+            if (gameRunning) return;
             gameRunning = true;
-            shootInterval = setInterval(shootProjectile, 200);
-            setInterval(updateGame, 16);
+            document.getElementById('startButton').style.display = 'none';
+            update();
         }
 
         function showGameOverScreen() {
             gameRunning = false;
-            clearInterval(shootInterval);
-            document.getElementById('finalScore').innerText = `Tu puntuación: ${score}`;
+            cancelAnimationFrame(animationId);
+            document.getElementById('finalScore').innerText = `CRÉDITOS OBTENIDOS: ${score}`;
             document.getElementById('gameOverScreen').style.display = 'block';
         }
 
         function resetGame() {
+            score = 0; bulletsPerShot = 1; enemies = []; player.projectiles = [];
+            player.x = canvas.width / 2 - 20;
+            document.getElementById('score').innerText = `Puntaje: 0`;
             document.getElementById('gameOverScreen').style.display = 'none';
-            score = 0;
-            bulletsPerShot = 1;
-            enemies.length = 0;
-            player.projectiles.length = 0;
-            startGame();
+            gameRunning = true;
+            update();
         }
 
-        function goToMenu() {
-            window.location.href = "juegos.html";
-        }
+        function goToMenu() { window.location.href = "index.html"; }
 
-        document.getElementById('startButton').addEventListener('click', () => {
-            document.getElementById('startButton').style.display = 'none';
-            startGame();
-        });
+        // Joystick Logic
         const joystick = document.getElementById('joystick');
-        const joystickHandle = document.getElementById('joystickHandle');
+        const handle = document.getElementById('joystickHandle');
+        let active = false;
 
-        let joystickActive = false;
-        let joystickCenter = { x: joystick.offsetLeft + 50, y: joystick.offsetTop + 50 };
+        const handleMove = (e) => {
+            if (!active || !gameRunning) return;
+            const touch = e.touches ? e.touches[0] : e;
+            const rect = joystick.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+            const distance = Math.min(50, Math.sqrt(dx*dx + dy*dy));
+            const angle = Math.atan2(dy, dx);
 
-        joystick.addEventListener('touchstart', (e) => {
-            joystickActive = true;
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+
+            handle.style.transform = `translate(${x}px, ${y}px)`;
+            
+            // Mover jugador basándose en inclinación del joystick
+            player.x += (x / 10);
+            player.y += (y / 10);
+
+            // Límites
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+        };
+
+        joystick.addEventListener('touchstart', (e) => { active = true; e.preventDefault(); });
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', () => { 
+            active = false; 
+            handle.style.transform = `translate(0, 0)`; 
         });
 
-        joystick.addEventListener('touchmove', (e) => {
-            if (joystickActive) {
-                let touch = e.touches[0];
-                let offsetX = touch.clientX - joystickCenter.x;
-                joystickHandle.style.transform = `translate(${offsetX}px, 0)`;
-
-                player.x += offsetX * 0.1;
-                if (player.x < 0) player.x = 0;
-                if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-            }
-        });
-
-        joystick.addEventListener('touchend', () => {
-            joystickActive = false;
-            joystickHandle.style.transform = `translate(0, 0)`;
-        });
+        document.getElementById('startButton').addEventListener('click', startGame);
     </script>
 </body>
 </html>
