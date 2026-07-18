@@ -35,8 +35,10 @@
 
     <div id="configuracion" class="section">
         <h2>Ajustes</h2>
-        <label>Piezas: <input type="number" id="dim" value="3" min="2" max="6"></label><br>
-        <label>Imagen: <input type="file" id="imagenInput" accept="image/*"></label><br>
+        <label>Piezas: <input type="number" id="dim" value="3" min="2" max="56"></label><br>
+        <!-- Alerta visual si se exceden los límites -->
+        <p id="alertaLimite" style="color: var(--accent); font-size: 0.85rem; margin-top: 5px; display: none; font-weight: bold; text-shadow: 0 0 5px rgba(255,0,170,0.3);"></p>
+        <label style="display: inline-block; margin-top: 10px;">Imagen: <input type="file" id="imagenInput" accept="image/*"></label><br>
         <button class="btn" onclick="guardarConfig()">GUARDAR</button>
     </div>
 
@@ -53,126 +55,144 @@
     </div>
 
     <script>
-        let n = 3; // filas y columnas (n x n)
-        let imagenSrc = "https://qu.ax/JrOvP.jpg";
-        let seleccionada = null;
+        let n = 3; // filas y columnas (n x n)[span_1](start_span)[span_1](end_span)
+        let imagenSrc = "https://qu.ax/JrOvP.jpg"; //[span_2](start_span)[span_2](end_span)
+        let seleccionada = null; //[span_3](start_span)[span_3](end_span)
 
         function mostrarSeccion(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove("active"));
-            document.getElementById(id).classList.add("active");
-            if (id === "juego") iniciarJuego();
-            if (id === "historial") mostrarHistorial();
+            document.querySelectorAll('.section').forEach(s => s.classList.remove("active")); //[span_4](start_span)[span_4](end_span)
+            document.getElementById(id).classList.add("active"); //[span_5](start_span)[span_5](end_span)
+            if (id === "juego") iniciarJuego(); //[span_6](start_span)[span_6](end_span)
+            if (id === "historial") mostrarHistorial(); //[span_7](start_span)[span_7](end_span)
         }
 
         function guardarConfig() {
-            n = parseInt(document.getElementById("dim").value);
-            let archivo = document.getElementById("imagenInput").files[0];
-            if (archivo) {
-                let reader = new FileReader();
-                reader.onload = (e) => { imagenSrc = e.target.result; mostrarSeccion('menu'); };
-                reader.readAsDataURL(archivo);
-            } else { mostrarSeccion('menu'); }
+            let inputDim = parseInt(document.getElementById("dim").value);
+            const alerta = document.getElementById("alertaLimite");
+            
+            // VALIDACIÓN CONTRA VALORES INVALIDOS O EXCESIVOS
+            if (isNaN(inputDim) || inputDim < 2) {
+                n = 2; // Mínimo seguro por defecto
+                alerta.style.display = "none";
+            } else if (inputDim > 56) { 
+                n = 56; // Límite máximo establecido
+                
+                // Mostrar el texto de error personalizado en el DOM
+                alerta.innerText = "Excediste el límite máximo. Límite 56 = 3136 piezas.";
+                alerta.style.display = "block";
+                
+                // Forzar el valor visualmente en el input
+                document.getElementById("dim").value = n;
+                return; // Detener la navegación para que el usuario verifique la alerta
+            } else {
+                n = inputDim;
+                alerta.style.display = "none"; // Ocultar si el valor está en el rango correcto
+            }
+
+            let archivo = document.getElementById("imagenInput").files[0]; //[span_8](start_span)[span_8](end_span)
+            if (archivo) { //[span_9](start_span)[span_9](end_span)
+                let reader = new FileReader(); //[span_10](start_span)[span_10](end_span)
+                reader.onload = (e) => { imagenSrc = e.target.result; mostrarSeccion('menu'); }; //[span_11](start_span)[span_11](end_span)
+                reader.readAsDataURL(archivo); //[span_12](start_span)[span_12](end_span)
+            } else { mostrarSeccion('menu'); } //[span_13](start_span)[span_13](end_span)
         }
 
         function iniciarJuego() {
-            const puzzle = document.getElementById("puzzle");
-            puzzle.innerHTML = "";
-            document.getElementById("puzzleTitle").innerText = "RECONSTRUYENDO...";
+            const puzzle = document.getElementById("puzzle"); //[span_14](start_span)[span_14](end_span)
+            puzzle.innerHTML = ""; //[span_15](start_span)[span_15](end_span)
+            document.getElementById("puzzleTitle").innerText = "RECONSTRUYENDO..."; //[span_16](start_span)[span_16](end_span)
             
-            const size = Math.min(window.innerWidth - 60, 450);
-            const pSize = size / n;
-            puzzle.style.width = `${size}px`;
-            puzzle.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+            const size = Math.min(window.innerWidth - 60, 450); //[span_17](start_span)[span_17](end_span)
+            const pSize = size / n; //[span_18](start_span)[span_18](end_span)
+            puzzle.style.width = `${size}px`; //[span_19](start_span)[span_19](end_span)
+            puzzle.style.gridTemplateColumns = `repeat(${n}, 1fr)`; //[span_20](start_span)[span_20](end_span)
 
-            let piezas = [];
-            for (let i = 0; i < n * n; i++) {
-                let p = document.createElement("div");
-                p.className = "pieza";
-                p.style.width = `${pSize}px`;
-                p.style.height = `${pSize}px`;
-                p.style.backgroundImage = `url(${imagenSrc})`;
-                p.style.backgroundSize = `${size}px ${size}px`;
+            let piezas = []; //[span_21](start_span)[span_21](end_span)
+            for (let i = 0; i < n * n; i++) { //[span_22](start_span)[span_22](end_span)
+                let p = document.createElement("div"); //[span_23](start_span)[span_23](end_span)
+                p.className = "pieza"; //[span_24](start_span)[span_24](end_span)
+                p.style.width = `${pSize}px`; //[span_25](start_span)[span_25](end_span)
+                p.style.height = `${pSize}px`; //[span_26](start_span)[span_26](end_span)
+                p.style.backgroundImage = `url(${imagenSrc})`; //[span_27](start_span)[span_27](end_span)
+                p.style.backgroundSize = `${size}px ${size}px`; //[span_28](start_span)[span_28](end_span)
                 
-                // Posición de fondo basada en el índice original
-                let x = -(i % n) * pSize;
-                let y = -Math.floor(i / n) * pSize;
-                p.style.backgroundPosition = `${x}px ${y}px`;
+                let x = -(i % n) * pSize; //[span_29](start_span)[span_29](end_span)
+                let y = -Math.floor(i / n) * pSize; //[span_30](start_span)[span_30](end_span)
+                p.style.backgroundPosition = `${x}px ${y}px`; //[span_31](start_span)[span_31](end_span)
                 
-                p.dataset.id = i; // El ID es la posición correcta
-                p.onclick = () => intercambiar(p);
-                piezas.push(p);
+                p.dataset.id = i; //[span_32](start_span)[span_32](end_span)
+                p.onclick = () => intercambiar(p); //[span_33](start_span)[span_33](end_span)
+                piezas.push(p); //[span_34](start_span)[span_34](end_span)
             }
             
-            // Mezclamos hasta que el orden sea diferente al original
+            // Mezclador completamente seguro con el rango limitado
             do {
-                piezas.sort(() => Math.random() - 0.5);
-            } while (piezas.every((p, i) => p.dataset.id == i));
+                piezas.sort(() => Math.random() - 0.5); //[span_35](start_span)[span_35](end_span)
+            } while (piezas.every((p, i) => p.dataset.id == i)); //[span_36](start_span)[span_36](end_span)
 
-            piezas.forEach(p => puzzle.appendChild(p));
+            piezas.forEach(p => puzzle.appendChild(p)); //[span_37](start_span)[span_37](end_span)
         }
 
         function intercambiar(p) {
-            document.getElementById("clickSound").play().catch(()=>{});
-            if (!seleccionada) {
-                seleccionada = p;
-                p.classList.add("selected");
-            } else {
-                if (seleccionada === p) {
-                    p.classList.remove("selected");
-                    seleccionada = null;
-                    return;
+            document.getElementById("clickSound").play().catch(()=>{}); //[span_38](start_span)[span_38](end_span)
+            if (!seleccionada) { //[span_39](start_span)[span_39](end_span)
+                seleccionada = p; //[span_40](start_span)[span_40](end_span)
+                p.classList.add("selected"); //[span_41](start_span)[span_41](end_span)
+            } else { //[span_42](start_span)[span_42](end_span)
+                if (seleccionada === p) { //[span_43](start_span)[span_43](end_span)
+                    p.classList.remove("selected"); //[span_44](start_span)[span_44](end_span)
+                    seleccionada = null; //[span_45](start_span)[span_45](end_span)
+                    return; //[span_46](start_span)[span_46](end_span)
                 }
                 
-                document.getElementById("swapSound").play().catch(()=>{});
-                // Intercambiamos POSICIÓN DE FONDO y DATA-ID
-                let tempBg = seleccionada.style.backgroundPosition;
-                let tempId = seleccionada.dataset.id;
+                document.getElementById("swapSound").play().catch(()=>{}); //[span_47](start_span)[span_47](end_span)
+                let tempBg = seleccionada.style.backgroundPosition; //[span_48](start_span)[span_48](end_span)
+                let tempId = seleccionada.dataset.id; //[span_49](start_span)[span_49](end_span)
                 
-                seleccionada.style.backgroundPosition = p.style.backgroundPosition;
-                seleccionada.dataset.id = p.dataset.id;
+                seleccionada.style.backgroundPosition = p.style.backgroundPosition; //[span_50](start_span)[span_50](end_span)
+                seleccionada.dataset.id = p.dataset.id; //[span_51](start_span)[span_51](end_span)
                 
-                p.style.backgroundPosition = tempBg;
-                p.dataset.id = tempId;
+                p.style.backgroundPosition = tempBg; //[span_52](start_span)[span_52](end_span)
+                p.dataset.id = tempId; //[span_53](start_span)[span_53](end_span)
                 
-                seleccionada.classList.remove("selected");
-                seleccionada = null;
-                verificar();
+                seleccionada.classList.remove("selected"); //[span_54](start_span)[span_54](end_span)
+                seleccionada = null; //[span_55](start_span)[span_55](end_span)
+                verificar(); //[span_56](start_span)[span_56](end_span)
             }
         }
 
         function verificar() {
-            let piezas = Array.from(document.getElementById("puzzle").children);
-            // Ahora comparamos si el DATA-ID de la pieza coincide con su posición en el Grid (i)
-            let ganado = piezas.every((p, i) => p.dataset.id == i);
+            let piezas = Array.from(document.getElementById("puzzle").children); //[span_57](start_span)[span_57](end_span)
+            let ganado = piezas.every((p, i) => p.dataset.id == i); //[span_58](start_span)[span_58](end_span)
 
-            if (ganado) {
-                document.getElementById("puzzleTitle").innerText = "¡SINCRO COMPLETADA!";
-                setTimeout(() => {
-                    alert("¡Has completado el rompecabezas!");
-                    guardarHistorial();
-                    mostrarSeccion("menu");
-                }, 300);
+            if (ganado) { //[span_59](start_span)[span_59](end_span)
+                document.getElementById("puzzleTitle").innerText = "¡SINCRO COMPLETADA!"; //[span_60](start_span)[span_60](end_span)
+                setTimeout(() => { //[span_61](start_span)[span_61](end_span)
+                    alert("¡Has completado el rompecabezas!"); //[span_62](start_span)[span_62](end_span)
+                    guardarHistorial(); //[span_63](start_span)[span_63](end_span)
+                    mostrarSeccion("menu"); //[span_64](start_span)[span_64](end_span)
+                }, 300); //[span_65](start_span)[span_65](end_span)
             }
         }
 
         function guardarHistorial() {
-            let h = JSON.parse(localStorage.getItem("af_puzzle_log")) || [];
-            h.push(imagenSrc);
-            localStorage.setItem("af_puzzle_log", JSON.stringify(h.slice(-12))); // Guardamos los últimos 12
+            let h = JSON.parse(localStorage.getItem("af_puzzle_log")) || []; //[span_66](start_span)[span_66](end_span)
+            h.push(imagenSrc); //[span_67](start_span)[span_67](end_span)
+            localStorage.setItem("af_puzzle_log", JSON.stringify(h.slice(-12))); //[span_68](start_span)[span_68](end_span)
         }
 
         function mostrarHistorial() {
-            let lista = document.getElementById("listaHistorial");
-            lista.innerHTML = "";
-            let h = JSON.parse(localStorage.getItem("af_puzzle_log")) || [];
-            if (h.length === 0) {
-                lista.innerHTML = "<p>Aún no hay datos registrados.</p>";
-                return;
+            let lista = document.getElementById("listaHistorial"); //[span_69](start_span)[span_69](end_span)
+            lista.innerHTML = ""; //[span_70](start_span)[span_70](end_span)
+            let h = JSON.parse(localStorage.getItem("af_puzzle_log")) || []; //[span_71](start_span)[span_71](end_span)
+            if (h.length === 0) { //[span_72](start_span)[span_72](end_span)
+                lista.innerHTML = "<p>Aún no hay datos registrados.</p>"; //[span_73](start_span)[span_73](end_span)
+                return; //[span_74](start_span)[span_74](end_span)
             }
-            h.reverse().forEach(src => { // Los más recientes primero
-                let img = document.createElement("img");
-                img.src = src;
-                lista.appendChild(img);
+            h.reverse().forEach(src => { //[span_75](start_span)[span_75](end_span)
+                let img = document.createElement("img"); //[span_76](start_span)[span_76](end_span)
+                img.src = src; //[span_77](start_span)[span_77](end_span)
+                lista.appendChild(img); //[span_78](start_span)[span_78](end_span)
             });
         }
     </script>
